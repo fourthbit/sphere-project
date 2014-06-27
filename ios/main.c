@@ -4,6 +4,9 @@
  *  use however you want
  */
 
+
+
+
 #include "SDL.h"
 #include <time.h>
 
@@ -19,7 +22,6 @@ randomInt(int min, int max)
 void
 render(SDL_Renderer *renderer)
 {
-
     Uint8 r, g, b;
 
     /* Clear the screen */
@@ -28,7 +30,7 @@ render(SDL_Renderer *renderer)
 
     /*  Come up with a random rectangle */
     SDL_Rect rect;
-    rect.w = randomInt(64, 128);
+    rect.w = 500;//randomInt(64, 128);
     rect.h = randomInt(64, 128);
     rect.x = randomInt(0, SCREEN_WIDTH);
     rect.y = randomInt(0, SCREEN_HEIGHT);
@@ -46,53 +48,58 @@ render(SDL_Renderer *renderer)
     SDL_RenderPresent(renderer);
 }
 
+void ___scheme_lib_bridge();
+
 int
-main(int argc, char *argv[])
+SDL_main(int argc, char *argv[])
 {
-
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-    int done;
-    SDL_Event event;
-
-    /* initialize SDL */
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        printf("Could not initialize SDL\n");
-        return 1;
-    }
-
-    /* seed random number generator */
-    srand(time(NULL));
-
-    /* create window and renderer */
-    window =
-        SDL_CreateWindow(NULL, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
-                         SDL_WINDOW_OPENGL);
-    if (!window) {
-        printf("Could not initialize Window\n");
-        return 1;
-    }
-
-    renderer = SDL_CreateRenderer(window, -1, 0);
-    if (!renderer) {
-        printf("Could not create renderer\n");
-        return 1;
-    }
-
-    /* Enter render loop, waiting for user to quit */
-    done = 0;
-    while (!done) {
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                done = 1;
-            }
-        }
-        render(renderer);
-        SDL_Delay(1);
-    }
-
-    /* shutdown SDL */
-    SDL_Quit();
+    //gambit_setup();
+    //___scheme_lib_bridge();
+    
+//    SDL_Window *window;
+//    SDL_Renderer *renderer;
+//    int done;
+//    SDL_Event event;
+//
+//    /* initialize SDL */
+//    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+//        printf("Could not initialize SDL\n");
+//        return 1;
+//    }
+//
+//    /* seed random number generator */
+//    srand(time(NULL));
+//
+//    /* create window and renderer */
+//    window =
+//        SDL_CreateWindow(NULL, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
+//                         SDL_WINDOW_OPENGL);
+//    if (!window) {
+//        printf("Could not initialize Window\n");
+//        return 1;
+//    }
+//
+//    renderer = SDL_CreateRenderer(window, -1, 0);
+//    if (!renderer) {
+//        printf("Could not create renderer\n");
+//        return 1;
+//    }
+//
+//    /* Enter render loop, waiting for user to quit */
+//    done = 0;
+//    while (!done) {
+//        while (SDL_PollEvent(&event)) {
+//            if (event.type == SDL_QUIT) {
+//                done = 1;
+//            }
+//        }
+//        render(renderer);
+//        SDL_Delay(1);
+//    }
+//
+//    /* shutdown SDL */
+//    SDL_Quit();
+//    
 
     return 0;
 }
