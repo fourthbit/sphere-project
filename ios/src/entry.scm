@@ -34,9 +34,9 @@ end-c-lambda
 (printf (string-append (number->string (ios-device)) "\n"))
 
 (cond
- ((file-exists? "app.o1")
-  (load "app.o1"))
- ((file-exists? "app.scm")
-  (load "app.scm"))
+ ((file-exists? "main.o1")
+  (load "main.o1"))
+ ((file-exists? "main.scm")
+  (load "main.scm"))
  (else
-  (printf (string-append "app.scm / app.o1 :: not found in " (current-directory) "\n"))))
+  (printf (string-append "main.scm/main.o1 :: not found in " (current-directory) "\n"))))

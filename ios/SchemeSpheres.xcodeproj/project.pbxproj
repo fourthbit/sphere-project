@@ -16,6 +16,7 @@
 		38032197195F2343002B40D9 /* entry.c in Sources */ = {isa = PBXBuildFile; fileRef = 38032191195F2343002B40D9 /* entry.c */; };
 		38032199195F2343002B40D9 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 38032193195F2343002B40D9 /* main.c */; };
 		3803219A195F2343002B40D9 /* UIDevice+Hardware.m in Sources */ = {isa = PBXBuildFile; fileRef = 38032195195F2343002B40D9 /* UIDevice+Hardware.m */; };
+		3803219C195F28CE002B40D9 /* main.scm in Resources */ = {isa = PBXBuildFile; fileRef = 3803219B195F28CE002B40D9 /* main.scm */; };
 		38A7C10A1959994F00FD6D80 /* doxyfile in Resources */ = {isa = PBXBuildFile; fileRef = 38A7C0BC1959994F00FD6D80 /* doxyfile */; };
 		38A7C10B1959994F00FD6D80 /* SDL_config.h.cmake in Resources */ = {isa = PBXBuildFile; fileRef = 38A7C0C51959994F00FD6D80 /* SDL_config.h.cmake */; };
 		38A7C10C1959994F00FD6D80 /* SDL_config.h.in in Resources */ = {isa = PBXBuildFile; fileRef = 38A7C0C61959994F00FD6D80 /* SDL_config.h.in */; };
@@ -41,6 +42,7 @@
 		38032193195F2343002B40D9 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = src/main.c; sourceTree = "<group>"; };
 		38032194195F2343002B40D9 /* UIDevice+Hardware.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "UIDevice+Hardware.h"; path = "src/UIDevice+Hardware.h"; sourceTree = "<group>"; };
 		38032195195F2343002B40D9 /* UIDevice+Hardware.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "UIDevice+Hardware.m"; path = "src/UIDevice+Hardware.m"; sourceTree = "<group>"; };
+		3803219B195F28CE002B40D9 /* main.scm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = main.scm; sourceTree = "<group>"; };
 		38A7C0BA1959994F00FD6D80 /* begin_code.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = begin_code.h; sourceTree = "<group>"; };
 		38A7C0BB1959994F00FD6D80 /* close_code.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = close_code.h; sourceTree = "<group>"; };
 		38A7C0BC1959994F00FD6D80 /* doxyfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = doxyfile; sourceTree = "<group>"; };
@@ -184,6 +186,7 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				3803219B195F28CE002B40D9 /* main.scm */,
 				FD77A07E0E26BDA900F39101 /* Default.png */,
 				FD77A07C0E26BD8C00F39101 /* Icon.png */,
 				8D1107310486CEB800E47090 /* Info.plist */,
@@ -384,6 +387,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3803219C195F28CE002B40D9 /* main.scm in Resources */,
 				FD77A07D0E26BD8C00F39101 /* Icon.png in Resources */,
 				FD77A07F0E26BDA900F39101 /* Default.png in Resources */,
 				38A7C10A1959994F00FD6D80 /* doxyfile in Resources */,

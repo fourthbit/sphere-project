@@ -44,3 +44,9 @@
           (thread-sleep! frame-delay)
           (unless (= SDL_QUIT (SDL_Event-type event))
                   (recur (++ iteration))))))))
+
+;; (cond-expand
+;;  (android (c-define (c-scheme-main) () void "scheme_main" "" (main)))
+;;  (host (main))
+;;  (else #!void))
+(main)
