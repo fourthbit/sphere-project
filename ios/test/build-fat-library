@@ -26,17 +26,20 @@ custom_build()
    mkdir build
    #gsc -c -o build/entry.m entry.scm
    #gsc -link -o build/entry_.m build/entry.m
+   cd build
+   cp ../entry.scm .
+   gsc -link entry.scm
+   cd ..
    echo "Scheme compiled"
 
-   echo "=========================================="
-   echo $CC
-   #echo "++++++++++++++++++++++++++++++++++++++++++"
-   rm -f entry.o entry_.o
-   $CC -c entry_.m entry.m -I/usr/local/Gambit-C/include #-L../gambit/lib -lgambc
-   #gsc -obj entry.m entry_.m
-   mkdir lib
-   ar r lib/libschemespheres.a entry.o entry_.o
-   ranlib lib/libschemespheres.a
+   # echo "=========================================="
+   # echo $CC
+   # cd build
+   # $CC -c entry_.c entry.c -I/usr/local/Gambit-C/include -D___LIBRARY
+   # cd ..
+   # mkdir lib
+   # ar r lib/libschemespheres.a build/entry_.o build/entry.o
+   # ranlib lib/libschemespheres.a
 }
 
 select_ios()

@@ -11,8 +11,10 @@
 		1DF5F4E00D08C38300B7A737 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1DF5F4DF0D08C38300B7A737 /* UIKit.framework */; };
 		28FD15000DC6FC520079059D /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 28FD14FF0DC6FC520079059D /* OpenGLES.framework */; };
 		28FD15080DC6FC5B0079059D /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 28FD15070DC6FC5B0079059D /* QuartzCore.framework */; };
-		3803215B195DED28002B40D9 /* libschemespheres.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3803215A195DED28002B40D9 /* libschemespheres.a */; settings = {ATTRIBUTES = (Required, ); }; };
 		3803215D195DF10A002B40D9 /* libgambc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3803215C195DF10A002B40D9 /* libgambc.a */; };
+		38032181195EDD2C002B40D9 /* entry_.c in Sources */ = {isa = PBXBuildFile; fileRef = 3803217F195EDD2C002B40D9 /* entry_.c */; };
+		38032182195EDD2C002B40D9 /* entry.c in Sources */ = {isa = PBXBuildFile; fileRef = 38032180195EDD2C002B40D9 /* entry.c */; };
+		3803218A195EF276002B40D9 /* UIDevice+Hardware.m in Sources */ = {isa = PBXBuildFile; fileRef = 38032189195EF276002B40D9 /* UIDevice+Hardware.m */; };
 		38A7C10A1959994F00FD6D80 /* doxyfile in Resources */ = {isa = PBXBuildFile; fileRef = 38A7C0BC1959994F00FD6D80 /* doxyfile */; };
 		38A7C10B1959994F00FD6D80 /* SDL_config.h.cmake in Resources */ = {isa = PBXBuildFile; fileRef = 38A7C0C51959994F00FD6D80 /* SDL_config.h.cmake */; };
 		38A7C10C1959994F00FD6D80 /* SDL_config.h.in in Resources */ = {isa = PBXBuildFile; fileRef = 38A7C0C61959994F00FD6D80 /* SDL_config.h.in */; };
@@ -33,8 +35,11 @@
 		28FD15070DC6FC5B0079059D /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		380320FE195D8271002B40D9 /* gambit-not407002.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "gambit-not407002.h"; sourceTree = "<group>"; };
 		380320FF195D8271002B40D9 /* gambit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gambit.h; sourceTree = "<group>"; };
-		3803215A195DED28002B40D9 /* libschemespheres.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libschemespheres.a; path = "../../test/fat-lib/libschemespheres.a"; sourceTree = "<group>"; };
 		3803215C195DF10A002B40D9 /* libgambc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libgambc.a; sourceTree = "<group>"; };
+		3803217F195EDD2C002B40D9 /* entry_.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = entry_.c; path = test/build/entry_.c; sourceTree = "<group>"; };
+		38032180195EDD2C002B40D9 /* entry.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = entry.c; path = test/build/entry.c; sourceTree = "<group>"; };
+		38032188195EF276002B40D9 /* UIDevice+Hardware.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIDevice+Hardware.h"; sourceTree = "<group>"; };
+		38032189195EF276002B40D9 /* UIDevice+Hardware.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIDevice+Hardware.m"; sourceTree = "<group>"; };
 		38A7C0BA1959994F00FD6D80 /* begin_code.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = begin_code.h; sourceTree = "<group>"; };
 		38A7C0BB1959994F00FD6D80 /* close_code.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = close_code.h; sourceTree = "<group>"; };
 		38A7C0BC1959994F00FD6D80 /* doxyfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = doxyfile; sourceTree = "<group>"; };
@@ -129,15 +134,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				1D60589F0D05DD5A006BFB54 /* Foundation.framework in Frameworks */,
-				3803215B195DED28002B40D9 /* libschemespheres.a in Frameworks */,
 				1DF5F4E00D08C38300B7A737 /* UIKit.framework in Frameworks */,
 				28FD15000DC6FC520079059D /* OpenGLES.framework in Frameworks */,
 				28FD15080DC6FC5B0079059D /* QuartzCore.framework in Frameworks */,
-				38A7C10D1959994F00FD6D80 /* libSDL2.a in Frameworks */,
-				3803215D195DF10A002B40D9 /* libgambc.a in Frameworks */,
 				FD779EDE0E26BA1200F39101 /* CoreAudio.framework in Frameworks */,
 				FD77A0850E26BDB800F39101 /* AudioToolbox.framework in Frameworks */,
 				FDB8BFC60E5A0F6A00980157 /* CoreGraphics.framework in Frameworks */,
+				38A7C10D1959994F00FD6D80 /* libSDL2.a in Frameworks */,
+				3803215D195DF10A002B40D9 /* libgambc.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -168,6 +172,10 @@
 		29B97315FDCFA39411CA2CEA /* src */ = {
 			isa = PBXGroup;
 			children = (
+				38032188195EF276002B40D9 /* UIDevice+Hardware.h */,
+				38032189195EF276002B40D9 /* UIDevice+Hardware.m */,
+				3803217F195EDD2C002B40D9 /* entry_.c */,
+				38032180195EDD2C002B40D9 /* entry.c */,
 				FD77A09C0E26BDE500F39101 /* main.c */,
 			);
 			name = src;
@@ -219,7 +227,6 @@
 			isa = PBXGroup;
 			children = (
 				3803215C195DF10A002B40D9 /* libgambc.a */,
-				3803215A195DED28002B40D9 /* libschemespheres.a */,
 			);
 			path = lib;
 			sourceTree = "<group>";
@@ -392,6 +399,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				38032182195EDD2C002B40D9 /* entry.c in Sources */,
+				3803218A195EF276002B40D9 /* UIDevice+Hardware.m in Sources */,
+				38032181195EDD2C002B40D9 /* entry_.c in Sources */,
 				FD77A09D0E26BDE500F39101 /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -411,11 +421,16 @@
 				INFOPLIST_FILE = Info.plist;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/SDL/lib\"",
 					"$(PROJECT_DIR)/SDL/lib",
 					"$(PROJECT_DIR)/gambit",
 					"$(PROJECT_DIR)/gambit/lib",
 					"$(PROJECT_DIR)/test/fat-lib",
+					"$(PROJECT_DIR)/test/lib",
+				);
+				OTHER_CFLAGS = (
+					"-x",
+					"objective-c",
+					"-D___LIBRARY",
 				);
 				PRODUCT_NAME = SchemeSpheres;
 			};
@@ -431,11 +446,16 @@
 				INFOPLIST_FILE = Info.plist;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/SDL/lib\"",
 					"$(PROJECT_DIR)/SDL/lib",
 					"$(PROJECT_DIR)/gambit",
 					"$(PROJECT_DIR)/gambit/lib",
 					"$(PROJECT_DIR)/test/fat-lib",
+					"$(PROJECT_DIR)/test/lib",
+				);
+				OTHER_CFLAGS = (
+					"-x",
+					"objective-c",
+					"-D___LIBRARY",
 				);
 				PRODUCT_NAME = SchemeSpheres;
 			};
@@ -446,10 +466,13 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEAD_CODE_STRIPPING = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_PREPROCESSOR_DEFINITIONS_NOT_USED_IN_PRECOMPS = "___LIBRARY";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				LD_NO_PIE = NO;
+				LINKER_DISPLAYS_MANGLED_NAMES = NO;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "-v";
@@ -463,10 +486,13 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				DEAD_CODE_STRIPPING = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_PREPROCESSOR_DEFINITIONS_NOT_USED_IN_PRECOMPS = "___LIBRARY";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				LD_NO_PIE = NO;
+				LINKER_DISPLAYS_MANGLED_NAMES = NO;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "-v";
 				PREBINDING = NO;
