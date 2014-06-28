@@ -1,44 +1,5 @@
-;;!! Android tasks
-
-(define-task android:setup ()
-  ;; Set up Android project files
-  (fusion#android-project-set-target "android-15")
-  ;; Create symlink to SDL library from SDL2 Sphere
-  (let ((SDL-link (string-append (android-jni-generator-directory) "deps/SDL")))
-    (unless (file-exists? SDL-link)
-            (create-symbolic-link (string-append (%sphere-path 'sdl2) "deps/SDL2-2.0.3") SDL-link))))
-
-(define-task android:compile ()
-  (fusion#android-compile-app "main" 'main
-                              target: 'debug
-                              cond-expand-features: '(debug)
-                              compiler-options: '(debug)))
-
-(define-task android:install ()
-  (fusion#android-install 'debug))
-
-(define-task android:run ()
-  ;; Run the Activity
-  (fusion#android-run "org.libsdl.app/org.libsdl.app.SDLActivity")
-  ;; log cat
-  (shell-command (string-append (android-adb-path) " logcat *:S *:F SchemeSpheres SDL SDL/APP")))
-
-(define-task android (android:compile android:install android:run)
-  'android)
-
-(define-task android:clean ()
-  (fusion#android-clean))
-
-;;!! iOS tasks
-
 (define ios-directory
   (make-parameter "ios/"))
-
-(define-task ios:setup ()
-  ;; Create symlink to SDL include library from SDL2 Sphere
-  (let ((SDL-link (string-append (ios-directory) "SDL/include")))
-    (unless (file-exists? SDL-link)
-            (create-symbolic-link (string-append (%sphere-path 'sdl2) "deps/SDL2-2.0.3/include") SDL-link))))
 
 ;;! Compile App
 ;; .parameter main-module main-module of the Android App
@@ -150,23 +111,131 @@
   ;;           (err "error building Java code")))
   )
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;;!! Android tasks
+
+(define-task android:setup ()
+  ;; Set up Android project files
+  (fusion#android-project-set-target "android-15")
+  ;; Create symlink to SDL library from SDL2 Sphere
+  (let ((SDL-link (string-append (android-jni-generator-directory) "deps/SDL")))
+    (unless (file-exists? SDL-link)
+            (create-symbolic-link (string-append (%sphere-path 'sdl2) "deps/SDL2-2.0.3") SDL-link))))
+
+(define-task android:compile ()
+  (if #f ;; #t to compile as a single app executable
+      ;; Compile all modules within the app executable
+      (fusion#android-compile-app "main" 'main
+                                  target: 'debug
+                                  cond-expand-features: '(debug)
+                                  compiler-options: '(debug))
+      (begin
+        ;; Compile the Android app with just the loader code
+        (fusion#ios-compile-app "my-app" 'loader
+                                target: 'debug
+                                cond-expand-features: '(ios debug)
+                                compiler-options: '(debug))
+        ;; Compile the main module and its dependencies as a loadable object
+        (fusion#compile-loadable-set "main_arm" 'main
+                                     merge-modules: #f
+                                     target: 'debug
+                                     arch: 'android-arm
+                                     cond-expand-features: '(debug)
+                                     compiler-options: '(debug))
+        (fusion#upload-file "main_arm.o1"))))
+
+(define-task android:install ()
+  (fusion#android-install 'debug))
+
+(define-task android:run ()
+  ;; Run the Activity
+  (fusion#android-run "org.libsdl.app/org.libsdl.app.SDLActivity")
+  ;; Log cat
+  (shell-command (string-append (android-adb-path) " logcat *:S *:F SchemeSpheres SDL SDL/APP")))
+
+(define-task android (android:compile android:install android:run)
+  'android)
+
+(define-task android:clean ()
+  (fusion#android-clean))
+
+;;!! iOS tasks
+
+(define-task ios:setup ()
+  ;; Create symlink to SDL include library from SDL2 Sphere
+  (let ((SDL-link (string-append (ios-directory) "SDL/include")))
+    (unless (file-exists? SDL-link)
+            (create-symbolic-link (string-append (%sphere-path 'sdl2) "deps/SDL2-2.0.3/include")
+                                  SDL-link))))
+
 (define-task ios:compile ()
-  (fusion#ios-compile-app "main" 'main
-                          target: 'debug
-                          cond-expand-features: '(debug)
-                          compiler-options: '(debug)))
+  (if #t ;; #t to compile as a single app executable
+      ;; The generated C files must be added manually to the src folder in Xcode
+      (begin
+        (sake#compile-module-and-dependencies-to-c 'main
+                                                   target: 'debug
+                                                   cond-expand-features: '(ios debug)
+                                                   compiler-options: '(debug))
+        (sake#generate-link-file 'main
+                                 type: 'incremental))
+      (begin
+        ;; Compile the iOS app with just the loader module
+        ;; The loader will decide which object to load according to the runtime architecture
+        (fusion#ios-compile-app 'loader
+                                target: 'debug
+                                cond-expand-features: '(ios debug)
+                                compiler-options: '(debug))
+        ;; Compile the main module and its dependencies as a loadable object
+        ;; Any new object generated this way must be added manually to the Resources folder in Xcode
+        (fusion#compile-loadable-set "main_i386" 'main
+                                     merge-modules: #f
+                                     target: 'debug
+                                     arch: 'ios-simulator
+                                     cond-expand-features: '(debug)
+                                     compiler-options: '(debug))
+        (fusion#compile-loadable-set "main_arm7" 'main
+                                     merge-modules: #f
+                                     target: 'debug
+                                     arch: 'arm7
+                                     cond-expand-features: '(debug)
+                                     compiler-options: '(debug))
+        (fusion#compile-loadable-set "main_arm7s" 'main
+                                     merge-modules: #f
+                                     target: 'debug
+                                     arch: 'arm7s
+                                     cond-expand-features: '(debug)
+                                     compiler-options: '(debug))
+        ;; Also, source code can be loaded directly at runtime without compilation.
+        ;; For that purpose, the load function can be used within any of the modules in the
+        ;; compiled set, and the source code files uploaded in any of these ways:
+        ;; - to the Resources folder (part of the app bundle)
+        ;; - to the Documents folder (created at runtime, must be uploaded when the app is running) TODO
+        ;; - dynamically run with the Remote Debugger in Emacs or the terminal
+        )))
 
-(define-task ios:install ()
-  (fusion#ios-install 'debug))
+(define-task ios:run ()
+  'run)
 
-;; (define-task android:run ()
-;;   'run)
+(define-task ios:clean ()
+  (fusion#ios-clean))
 
-;; (define-task ios (ios:compile ios:install ios:run)
-;;   'ios)
-
-;; (define-task ios:clean ()
-;;   (fusion#ios-clean))
+(define-task ios (ios:compile ios:run)
+  'ios)
 
 ;;!! Host tasks
 
@@ -174,7 +243,23 @@
   (fusion#host-run-interpreted 'main)) 
 
 (define-task host:compile ()
-  (fusion#host-compile-exe "main" 'main))
+  ;; Note (merge-modules): If #t this will include all dependencies in one big file before compiling to C
+  ;; Note (compile-loadable-set): this must be linked flat
+  
+  ;; Bundle a single executable
+  (fusion#host-compile-exe "my-application-standalone" 'main
+                           merge-modules: #f)
+  ;; Compile as a loader and a loadable library
+  (fusion#host-compile-exe "my-application" 'loader
+                           target: 'debug
+                           cond-expand-features: '(host debug)
+                           compiler-options: '(debug))
+  (fusion#compile-loadable-set "main" 'main
+                               merge-modules: #f
+                               target: 'debug
+                               arch: 'host
+                               cond-expand-features: '(debug)
+                               compiler-options: '(debug)))
 
 (define-task host:clean ()
   (sake#default-clean))
@@ -190,17 +275,18 @@
   ------------------------------
   
   android:setup             Setup Android project before running other tasks
-  android:compile           Compile Android project
+  android:compile           Compile the Android app
   android:install           Install App in current Android device (hardware or emulated)
   android:run               Run App in current Android device
   android:clean             Clean all Android generated files
   android                   Execute compile, install, run
 
   ios:setup                 Setup iOS project before running other tasks
-  ios:compile               Compile Scheme code that will be embedded in iOS app
+  ios:compile               Compile the iOS app
+  ios:run                   Launch the iOS Simulator and run the app
   ios:xcode                 Open the iOS project in Xcode
   ios:clean                 Clean all iOS generated files
-  ios                       Execute compile task and run Xcode
+  ios                       Execute compile and run
   
   host:compile              Compile the host program as standalone
   host:run                  Run the host OS (Linux/OSX) program interpreted
