@@ -1,6 +1,3 @@
-#include <string.h>
-#include <stdio.h>
-
 #define ___VERSION 407002
 
 #include "gambit.h"
@@ -13,11 +10,18 @@ ___END_C_LINKAGE
 
 ___setup_params_struct setup_params;
 
-void scheme_lib_bridge()
+
+
+#include <string.h>
+#include <stdio.h>
+
+
+
+void ___run_gambit()
 {
     printf("%s", "Setting up Gambit...\n");
-  // Taken from gambit, lib/main.c.
-  int debug_settings = ___DEBUG_SETTINGS_INITIAL;
+	// Taken from gambit, lib/main.c.
+	int debug_settings = ___DEBUG_SETTINGS_INITIAL;
     
     // -:d- (force repl io to be stdin/stdout since terminal isn't
     // -attached)
@@ -40,16 +44,21 @@ void scheme_lib_bridge()
        << ___DEBUG_SETTINGS_ERROR_SHIFT);
     
     ___setup_params_reset (&setup_params);
-  setup_params.version = ___VERSION;
-  setup_params.linker = SCHEME_LIBRARY_LINKER;
+	setup_params.version = ___VERSION;
+	setup_params.linker = SCHEME_LIBRARY_LINKER;
     setup_params.debug_settings = debug_settings;
-  
-  ___setup(&setup_params);
+	
+    printf("%s", "Running Gambit...\n");
     
-    printf("%s", "Running (main)...\n");
-    //scheme_main();
+	___setup(&setup_params);
     
     printf("%s", "Cleaning up Gambit...\n");
     ___cleanup();
 }
 
+int SDL_main(int argc, char *argv[])
+{
+    ___run_gambit();
+
+    return 0;
+}
