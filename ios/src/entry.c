@@ -40,9 +40,9 @@
 #define ___SYMCOUNT 1
 #define ___GLOCOUNT 14
 #define ___SUPCOUNT 7
-#define ___SUBCOUNT 10
-#define ___LBLCOUNT 30
-#define ___MODDESCR ___REF_SUB(9)
+#define ___SUBCOUNT 11
+#define ___LBLCOUNT 31
+#define ___MODDESCR ___REF_SUB(10)
 #include "gambit.h"
 
 ___NEED_SYM(___S_entry)
@@ -114,31 +114,34 @@ ___END_GLO
 #define ___GLO_system_2d_type ___GLO(13,___G_system_2d_type)
 #define ___PRM_system_2d_type ___PRM(13,___G_system_2d_type)
 
-___DEF_SUB_STR(___X0,1)
-               ___STR1(10)
+___DEF_SUB_STR(___X0,8)
+               ___STR8(67,79,78,84,82,79,76,10)
+               ___STR0
 ___DEF_SUB_STR(___X1,1)
                ___STR1(10)
 ___DEF_SUB_STR(___X2,1)
                ___STR1(10)
-___DEF_SUB_STR(___X3,7)
-               ___STR7(109,97,105,110,46,111,49)
+___DEF_SUB_STR(___X3,1)
+               ___STR1(10)
 ___DEF_SUB_STR(___X4,7)
                ___STR7(109,97,105,110,46,111,49)
-___DEF_SUB_STR(___X5,8)
+___DEF_SUB_STR(___X5,7)
+               ___STR7(109,97,105,110,46,111,49)
+___DEF_SUB_STR(___X6,8)
                ___STR8(109,97,105,110,46,115,99,109)
                ___STR0
-___DEF_SUB_STR(___X6,1)
+___DEF_SUB_STR(___X7,1)
                ___STR1(10)
-___DEF_SUB_STR(___X7,33)
+___DEF_SUB_STR(___X8,33)
                ___STR8(109,97,105,110,46,115,99,109)
                ___STR8(47,109,97,105,110,46,111,49)
                ___STR8(32,58,58,32,110,111,116,32)
                ___STR8(102,111,117,110,100,32,105,110)
                ___STR1(32)
-___DEF_SUB_STR(___X8,8)
+___DEF_SUB_STR(___X9,8)
                ___STR8(109,97,105,110,46,115,99,109)
                ___STR0
-___DEF_SUB_VEC(___X9,5)
+___DEF_SUB_VEC(___X10,5)
                ___VEC1(___REF_SYM(0,___S_entry))
                ___VEC1(___REF_PRC(1))
                ___VEC1(___REF_FIX(1))
@@ -157,6 +160,7 @@ ___BEGIN_SUB
 ,___DEF_SUB(___X7)
 ,___DEF_SUB(___X8)
 ,___DEF_SUB(___X9)
+,___DEF_SUB(___X10)
 ___END_SUB
 
 
@@ -195,6 +199,7 @@ ___DEF_M_HLBL(___L16__20_entry)
 ___DEF_M_HLBL(___L17__20_entry)
 ___DEF_M_HLBL(___L18__20_entry)
 ___DEF_M_HLBL(___L19__20_entry)
+___DEF_M_HLBL(___L20__20_entry)
 ___DEF_M_HLBL_INTRO
 ___DEF_M_HLBL(___L0__20_entry_23_0)
 ___DEF_M_HLBL(___L1__20_entry_23_0)
@@ -241,96 +246,101 @@ ___DEF_P_HLBL(___L16__20_entry)
 ___DEF_P_HLBL(___L17__20_entry)
 ___DEF_P_HLBL(___L18__20_entry)
 ___DEF_P_HLBL(___L19__20_entry)
+___DEF_P_HLBL(___L20__20_entry)
 ___END_P_HLBL
 ___BEGIN_P_SW
 ___DEF_SLBL(0,___L0__20_entry)
    ___IF_NARGS_EQ(0,___NOTHING)
    ___WRONG_NARGS(0,0,0,0)
 ___DEF_GLBL(___L__20_entry)
-   ___SET_GLO(4,___G_ios_2d_device,___PRC(22))
-   ___SET_GLO(5,___G_ios_2d_device_2d_description,___PRC(25))
-   ___SET_GLO(6,___G_printf,___PRC(28))
+   ___SET_GLO(4,___G_ios_2d_device,___PRC(23))
+   ___SET_GLO(5,___G_ios_2d_device_2d_description,___PRC(26))
+   ___SET_GLO(6,___G_printf,___PRC(29))
    ___SET_STK(1,___R0)
+   ___SET_R1(___SUB(0))
    ___SET_R0(___LBL(2))
    ___ADJFP(4)
    ___POLL(1)
 ___DEF_SLBL(1,___L1__20_entry)
-   ___JUMPGLOSAFE(___SET_NARGS(0),13,___G_system_2d_type)
+   ___JUMPGLOSAFE(___SET_NARGS(1),6,___G_printf)
 ___DEF_SLBL(2,___L2__20_entry)
    ___SET_R0(___LBL(3))
-   ___JUMPGLOSAFE(___SET_NARGS(1),11,___G_object_2d__3e_string)
+   ___JUMPGLOSAFE(___SET_NARGS(0),13,___G_system_2d_type)
 ___DEF_SLBL(3,___L3__20_entry)
-   ___SET_R2(___SUB(0))
    ___SET_R0(___LBL(4))
-   ___JUMPGLOSAFE(___SET_NARGS(2),12,___G_string_2d_append)
+   ___JUMPGLOSAFE(___SET_NARGS(1),11,___G_object_2d__3e_string)
 ___DEF_SLBL(4,___L4__20_entry)
+   ___SET_R2(___SUB(1))
    ___SET_R0(___LBL(5))
-   ___JUMPGLOSAFE(___SET_NARGS(1),6,___G_printf)
+   ___JUMPGLOSAFE(___SET_NARGS(2),12,___G_string_2d_append)
 ___DEF_SLBL(5,___L5__20_entry)
    ___SET_R0(___LBL(6))
-   ___JUMPGLOSAFE(___SET_NARGS(0),5,___G_ios_2d_device_2d_description)
-___DEF_SLBL(6,___L6__20_entry)
-   ___SET_R2(___SUB(1))
-   ___SET_R0(___LBL(7))
-   ___JUMPGLOSAFE(___SET_NARGS(2),12,___G_string_2d_append)
-___DEF_SLBL(7,___L7__20_entry)
-   ___SET_R0(___LBL(8))
    ___JUMPGLOSAFE(___SET_NARGS(1),6,___G_printf)
+___DEF_SLBL(6,___L6__20_entry)
+   ___SET_R0(___LBL(7))
+   ___JUMPGLOSAFE(___SET_NARGS(0),5,___G_ios_2d_device_2d_description)
+___DEF_SLBL(7,___L7__20_entry)
+   ___SET_R2(___SUB(2))
+   ___SET_R0(___LBL(8))
+   ___JUMPGLOSAFE(___SET_NARGS(2),12,___G_string_2d_append)
 ___DEF_SLBL(8,___L8__20_entry)
    ___SET_R0(___LBL(9))
-   ___JUMPGLOSAFE(___SET_NARGS(0),4,___G_ios_2d_device)
+   ___JUMPGLOSAFE(___SET_NARGS(1),6,___G_printf)
 ___DEF_SLBL(9,___L9__20_entry)
    ___SET_R0(___LBL(10))
-   ___JUMPGLOSAFE(___SET_NARGS(1),10,___G_number_2d__3e_string)
+   ___JUMPGLOSAFE(___SET_NARGS(0),4,___G_ios_2d_device)
 ___DEF_SLBL(10,___L10__20_entry)
-   ___SET_R2(___SUB(2))
    ___SET_R0(___LBL(11))
-   ___JUMPGLOSAFE(___SET_NARGS(2),12,___G_string_2d_append)
+   ___JUMPGLOSAFE(___SET_NARGS(1),10,___G_number_2d__3e_string)
 ___DEF_SLBL(11,___L11__20_entry)
+   ___SET_R2(___SUB(3))
    ___SET_R0(___LBL(12))
-   ___JUMPGLOSAFE(___SET_NARGS(1),6,___G_printf)
+   ___JUMPGLOSAFE(___SET_NARGS(2),12,___G_string_2d_append)
 ___DEF_SLBL(12,___L12__20_entry)
-   ___SET_R1(___SUB(3))
    ___SET_R0(___LBL(13))
-   ___JUMPGLOSAFE(___SET_NARGS(1),8,___G_file_2d_exists_3f_)
+   ___JUMPGLOSAFE(___SET_NARGS(1),6,___G_printf)
 ___DEF_SLBL(13,___L13__20_entry)
-   ___IF(___FALSEP(___R1))
-   ___GOTO(___L22__20_entry)
-   ___END_IF
    ___SET_R1(___SUB(4))
-   ___SET_R0(___STK(-3))
-   ___POLL(14)
+   ___SET_R0(___LBL(14))
+   ___JUMPGLOSAFE(___SET_NARGS(1),8,___G_file_2d_exists_3f_)
 ___DEF_SLBL(14,___L14__20_entry)
-   ___GOTO(___L20__20_entry)
-___DEF_SLBL(15,___L15__20_entry)
    ___IF(___FALSEP(___R1))
-   ___GOTO(___L21__20_entry)
+   ___GOTO(___L23__20_entry)
    ___END_IF
    ___SET_R1(___SUB(5))
    ___SET_R0(___STK(-3))
-   ___POLL(16)
+   ___POLL(15)
+___DEF_SLBL(15,___L15__20_entry)
+   ___GOTO(___L21__20_entry)
 ___DEF_SLBL(16,___L16__20_entry)
-___DEF_GLBL(___L20__20_entry)
+   ___IF(___FALSEP(___R1))
+   ___GOTO(___L22__20_entry)
+   ___END_IF
+   ___SET_R1(___SUB(6))
+   ___SET_R0(___STK(-3))
+   ___POLL(17)
+___DEF_SLBL(17,___L17__20_entry)
+___DEF_GLBL(___L21__20_entry)
    ___ADJFP(-4)
    ___JUMPGLOSAFE(___SET_NARGS(1),9,___G_load)
-___DEF_GLBL(___L21__20_entry)
-   ___SET_R0(___LBL(17))
-   ___JUMPGLOSAFE(___SET_NARGS(0),7,___G_current_2d_directory)
-___DEF_SLBL(17,___L17__20_entry)
-   ___SET_R2(___R1)
-   ___SET_R3(___SUB(6))
-   ___SET_R1(___SUB(7))
+___DEF_GLBL(___L22__20_entry)
    ___SET_R0(___LBL(18))
-   ___JUMPGLOSAFE(___SET_NARGS(3),12,___G_string_2d_append)
+   ___JUMPGLOSAFE(___SET_NARGS(0),7,___G_current_2d_directory)
 ___DEF_SLBL(18,___L18__20_entry)
-   ___SET_R0(___STK(-3))
-   ___POLL(19)
+   ___SET_R2(___R1)
+   ___SET_R3(___SUB(7))
+   ___SET_R1(___SUB(8))
+   ___SET_R0(___LBL(19))
+   ___JUMPGLOSAFE(___SET_NARGS(3),12,___G_string_2d_append)
 ___DEF_SLBL(19,___L19__20_entry)
+   ___SET_R0(___STK(-3))
+   ___POLL(20)
+___DEF_SLBL(20,___L20__20_entry)
    ___ADJFP(-4)
    ___JUMPGLOSAFE(___SET_NARGS(1),6,___G_printf)
-___DEF_GLBL(___L22__20_entry)
-   ___SET_R1(___SUB(8))
-   ___SET_R0(___LBL(15))
+___DEF_GLBL(___L23__20_entry)
+   ___SET_R1(___SUB(9))
+   ___SET_R0(___LBL(16))
    ___JUMPGLOSAFE(___SET_NARGS(1),8,___G_file_2d_exists_3f_)
 ___END_P_SW
 ___END_P_COD
@@ -338,7 +348,7 @@ ___END_P_COD
 #undef ___PH_PROC
 #define ___PH_PROC ___H__20_entry_23_0
 #undef ___PH_LBL0
-#define ___PH_LBL0 22
+#define ___PH_LBL0 23
 #undef ___PD_ALL
 #define ___PD_ALL ___D_FP ___D_R0
 #undef ___PR_ALL
@@ -389,7 +399,7 @@ ___END_P_COD
 #undef ___PH_PROC
 #define ___PH_PROC ___H__20_entry_23_1
 #undef ___PH_LBL0
-#define ___PH_LBL0 25
+#define ___PH_LBL0 26
 #undef ___PD_ALL
 #define ___PD_ALL ___D_FP ___D_R0
 #undef ___PR_ALL
@@ -416,9 +426,9 @@ ___BEGIN_CFUN_BODY
 #undef ___AT_END
 
 UIDevice *h=[[UIDevice alloc] init];
-char *c = [[h hardwareDescription] UTF8String];
+const char *c = [[h hardwareDescription] UTF8String];
 [h release];
-___result = c;
+___result = (char *) c                        ;
                 
 #ifndef ___AT_END
 #define ___AT_END
@@ -440,7 +450,7 @@ ___END_P_COD
 #undef ___PH_PROC
 #define ___PH_PROC ___H__20_entry_23_2
 #undef ___PH_LBL0
-#define ___PH_LBL0 28
+#define ___PH_LBL0 29
 #undef ___PD_ALL
 #define ___PD_ALL ___D_FP ___D_R0 ___D_R1
 #undef ___PR_ALL
@@ -492,9 +502,10 @@ ___END_M_SW
 ___END_M_COD
 
 ___BEGIN_LBL
- ___DEF_LBL_INTRO(___H__20_entry," entry",___REF_FAL,20,0)
+ ___DEF_LBL_INTRO(___H__20_entry," entry",___REF_FAL,21,0)
 ,___DEF_LBL_PROC(___H__20_entry,0,-1)
 ,___DEF_LBL_RET(___H__20_entry,___IFD(___RETI,4,0,0x3f1L))
+,___DEF_LBL_RET(___H__20_entry,___IFD(___RETN,1,0,0x1L))
 ,___DEF_LBL_RET(___H__20_entry,___IFD(___RETN,1,0,0x1L))
 ,___DEF_LBL_RET(___H__20_entry,___IFD(___RETN,1,0,0x1L))
 ,___DEF_LBL_RET(___H__20_entry,___IFD(___RETN,1,0,0x1L))
@@ -526,9 +537,9 @@ ___END_LBL
 
 ___BEGIN_MOD_PRM
 ___DEF_MOD_PRM(0,___G__20_entry,1)
-___DEF_MOD_PRM(1,___G__20_entry_23_0,22)
-___DEF_MOD_PRM(2,___G__20_entry_23_1,25)
-___DEF_MOD_PRM(3,___G__20_entry_23_2,28)
+___DEF_MOD_PRM(1,___G__20_entry_23_0,23)
+___DEF_MOD_PRM(2,___G__20_entry_23_1,26)
+___DEF_MOD_PRM(3,___G__20_entry_23_2,29)
 ___END_MOD_PRM
 
 ___BEGIN_MOD_C_INIT
@@ -536,9 +547,9 @@ ___END_MOD_C_INIT
 
 ___BEGIN_MOD_GLO
 ___DEF_MOD_GLO(0,___G__20_entry,1)
-___DEF_MOD_GLO(1,___G__20_entry_23_0,22)
-___DEF_MOD_GLO(2,___G__20_entry_23_1,25)
-___DEF_MOD_GLO(3,___G__20_entry_23_2,28)
+___DEF_MOD_GLO(1,___G__20_entry_23_0,23)
+___DEF_MOD_GLO(2,___G__20_entry_23_1,26)
+___DEF_MOD_GLO(3,___G__20_entry_23_2,29)
 ___END_MOD_GLO
 
 ___BEGIN_MOD_SYM_KEY

@@ -19,14 +19,16 @@ end-c-lambda
 (define ios-device-description (c-lambda () nonnull-char-string #<<end-c-lambda
 
 UIDevice *h=[[UIDevice alloc] init];
-char *c = [[h hardwareDescription] UTF8String];
+const char *c = [[h hardwareDescription] UTF8String];
 [h release];
-___result = c;
+___result = (char *) c                        ;
                 
 end-c-lambda
 ))
 
 (define printf (c-lambda (char-string) void "printf(\"%s\",___arg1);"))
+
+(printf "CONTROL\n")
 
 (printf (string-append (object->string (system-type)) "\n"))
 
