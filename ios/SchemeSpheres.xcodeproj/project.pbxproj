@@ -430,6 +430,11 @@
 					"objective-c",
 					"-D___LIBRARY",
 				);
+				OTHER_LDFLAGS = (
+					"-v",
+					"-ObjC",
+					"-all_load",
+				);
 				PRODUCT_NAME = SchemeSpheres;
 			};
 			name = Debug;
@@ -455,6 +460,11 @@
 					"-x",
 					"objective-c",
 					"-D___LIBRARY",
+				);
+				OTHER_LDFLAGS = (
+					"-v",
+					"-ObjC",
+					"-all_load",
 				);
 				PRODUCT_NAME = SchemeSpheres;
 			};
