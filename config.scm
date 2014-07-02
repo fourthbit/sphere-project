@@ -1,6 +1,6 @@
 (sphere: "my-app")
 (dependencies:
- (main
+ (main2
   (include
    (core: base-macros)
    (core: assert-macros))

@@ -81,9 +81,33 @@
 (define ios-assets-directory
   (make-parameter (string-append (ios-directory) (ios-assets-directory-suffix))))
 
-(define ios-link-file
+(define ios-link-file-incremental
   (make-parameter "linkfile_.c"))
 
+(define ios-link-file-flat
+  (make-parameter "linkfile_flat_.c"))
+
+(define ios-device-sdk-directory
+  (make-parameter
+   (let* ((sdk-dir-process
+           (open-process (list path: "tools/get_ios_sdk_dir" ;; XXX TODO: Move to Sphere Fusion
+                               arguments: '("iPhoneOS"))))
+          (result (read-line sdk-dir-process)))
+     (unless (zero? (process-status sdk-dir-process))
+             (err "fusion#compile-ios-app: error running script tools/get_ios_sdk_dir"))
+     (close-input-port sdk-dir-process)
+     result)))
+
+(define ios-simulator-sdk-directory
+  (make-parameter
+   (let* ((sdk-dir-process
+           (open-process (list path: "tools/get_ios_sdk_dir" ;; XXX TODO: Move to Sphere Fusion
+                               arguments: '("iPhoneSimulator"))))
+          (result (read-line sdk-dir-process)))
+     (unless (zero? (process-status sdk-dir-process))
+             (err "fusion#compile-ios-app: error running script tools/get_ios_sdk_dir"))
+     (close-input-port sdk-dir-process)
+     result)))
 
 
 ;;------------------------------------------------------------------------------
@@ -126,9 +150,13 @@
   (delete-if-exists (string-append (ios-directory) "build/")))
 
 
-(define (fusion#ios-generate-link-file modules #!key (verbose #f) (version '()))
-  (info/color 'blue "generating link file")
-  (let* ((output-file (string-append (ios-build-directory) (ios-link-file)))
+(define (fusion#ios-link-incremental modules
+                                     #!key
+                                     (verbose #f)
+                                     (version '()))
+  (info/color 'blue "generating incremental link file")
+  (let* ((output-file (string-append (ios-build-directory)
+                                     (ios-link-file-incremental)))
          (code
           `((link-incremental
              ',(map (lambda (m) (string-append (ios-build-directory)
@@ -137,29 +165,41 @@
              output: ,output-file))))
     (if verbose (pp code))
     (unless (= 0 (gambit-eval-here code))
-            (err "error generating Gambit link file"))))
+            (err "error generating Gambit incremental link file"))
+    output-file))
+
+(define (fusion#ios-link-flat modules
+                              #!key
+                              (verbose #f)
+                              (version '()))
+  (info/color 'blue "generating flat link file")
+  (let* ((output-file (string-append (ios-build-directory)
+                                     (ios-link-file-flat)))
+         (code
+          `((link-flat
+             ',(map (lambda (m) (string-append (ios-build-directory)
+                                          (%module-filename-c m version: version)))
+                    modules)
+             output: ,output-file
+             ;; with flat link files we remove warnings if non-verbose, since it includes used standard procedures too
+             warnings?: ,verbose))))
+    (if verbose (pp code))
+    (unless (= 0 (gambit-eval-here code))
+            (err "error generating Gambit flat link file"))
+    output-file))
 
 
-(define (fusion#ios-compile-c-file input-c-file
-                                   #!key
-                                   (output-c-file (string-append (path-strip-extension input-c-file) ".o"))
-                                   arch
-                                   platform-type
-                                   (compiler 'gcc)
-                                   (verbose #f))
+(define (fusion#ios-run-compiler arch
+                                 platform-type
+                                 compiler-arguments
+                                 #!key
+                                 (compiler 'gcc)
+                                 (verbose #f))
   (let ((arch-str (symbol->string arch))
         (sdk-name (case platform-type ((device) "iphoneos") ((simulator) "iphonesimulator")))
-        (ios-sdk-dir
-         (let* ((sdk-dir-process
-                 (open-process (list path: "tools/get_ios_sdk_dir"
-                                     arguments: (case platform-type
-                                                  ((device) '("iPhoneOS"))
-                                                  ((simulator) '("iPhoneSimulator"))))))
-                (result (read-line sdk-dir-process)))
-           (unless (zero? (process-status sdk-dir-process))
-                   (err "fusion#compile-ios-app: error running script tools/get_ios_sdk_dir"))
-           (close-input-port sdk-dir-process)
-           result)))
+        (ios-sdk-directory (case platform-type
+                             ((device) (ios-device-sdk-directory))
+                             ((simulator) (ios-simulator-sdk-directory)))))
     ;; Checks
     (unless (or (eq? platform-type 'simulator) (eq? platform-type 'device))
             (err "fusion#compile-ios-app: wrong platform-type"))
@@ -169,41 +209,21 @@
     (let* ((ios-cc-cli (string-append
                         "-sdk " sdk-name
                         " gcc"
-                        " -isysroot " ios-sdk-dir
+                        " -isysroot " ios-sdk-directory
                         " -arch " arch-str
                         " -miphoneos-version-min=5.0"))
            (ios-cxx-cli (string-append
                          "-sdk " sdk-name
                          " g++"
-                         " -isysroot " ios-sdk-dir
+                         " -isysroot " ios-sdk-directory
                          " -arch " arch-str
                          " -miphoneos-version-min=5.0"))
-           (selected-compiler-cli (case compiler ((gcc) ios-cc-cli) ((g++) ios-cxx-cli)))
-           (compiler-arguments `("-x"
-                                 "objective-c"
-                                 ,(string-append "-I" (ios-directory) "gambit/include")
-                                 "-D___LIBRARY"
-                                 "-I/Users/Alvaro/Dropbox/working/DaTest/ios/src"
-                                 ,(string-append "-I" (ios-source-directory))
-                                 "-I/usr/local/Gambit-C/spheres/sdl2/deps/SDL2-2.0.3/include" ;;XXX TODO
-                                 ,(string-append "-I" ios-sdk-dir "/System/Library/Frameworks/OpenGLES.framework/Headers") ;; XXX TODO
-                                 "-w" ;; XXX TODO
-                                 ;; **************
-                                 ;; **************
-                                 ;; **************
-                                 ;; **************
-                                 "-c"
-                                 ,input-c-file
-                                 "-o"
-                                 ,output-c-file)))
+           (selected-compiler-cli (case compiler ((gcc) ios-cc-cli) ((g++) ios-cxx-cli))))
       (when verbose
             (info/color 'green "Compiler command:")
             (println selected-compiler-cli)
             (info/color 'green "Compiler args:")
-            (println (let recur ((args compiler-arguments))
-                       (if (null? args)
-                           ""
-                           (string-append (car args) " " (recur (cdr args)))))))
+            (println (string-join compiler-arguments)))
       (let ((compilation-process
              (open-process
               (list path: "xcrun"
@@ -218,8 +238,37 @@
                           (string-append "LD=\"ld -arch " arch-str "\"")
                           "LDFLAGS=\"\"")))))
         (unless (zero? (process-status compilation-process))
-                (err (string-append "fusion#ios-compile-c-file: error compiling file " input-c-file)))
-        output-c-file))))
+                (err "fusion#ios-run-compiler: error running command"))))))
+
+(define (fusion#ios-compile-c-file input-c-file
+                                   #!key
+                                   (output-c-file (string-append (path-strip-extension input-c-file) ".o"))
+                                   arch
+                                   platform-type
+                                   (compiler 'gcc)
+                                   (cc-flags '())
+                                   (verbose #f))
+  (fusion#ios-run-compiler arch
+                           platform-type
+                           `("-x"
+                             "objective-c"
+                             ,(string-append "-I" (ios-directory) "gambit/include")
+                             ,@cc-flags
+                             ,(string-append "-I" (ios-source-directory))
+                             "-I/usr/local/Gambit-C/spheres/sdl2/deps/SDL2-2.0.3/include" ;;XXX TODO
+                             ;;,(string-append "-I" ios-sdk-directory "/System/Library/Frameworks/OpenGLES.framework/Headers") ;; XXX TODO
+                             ;; "-w" ;; XXX TODO
+                             ;; **************
+                             ;; **************
+                             ;; **************
+                             ;; **************
+                             "-c"
+                             ,input-c-file
+                             "-o"
+                             ,output-c-file)
+                           compiler: compiler
+                           verbose: verbose)
+  output-c-file)
 
 (define (fusion#ios-create-library-archive lib-name o-files #!key (verbose #f))
   (shell-command (string-append "ar r" (if verbose "cv " " ") lib-name " " (string-join o-files))))
@@ -237,9 +286,10 @@
                                 (target 'debug)
                                 (verbose #f))
   ;; Defines
-  (##cond-expand-features (append '(mobile android) (##cond-expand-features)))
+  (##cond-expand-features (append '(mobile ios) (##cond-expand-features)))
   ;; Checks
   (fusion#ios-project-supported?)
+  (unless arch (err "fusion#ios-compile-app: arch argument is mandatory"))
   (unless (or (eq? arch 'i386) (eq? arch 'armv7) (eq? arch 'armv7s))
           (err "fusion#ios-compile-app: wrong arch argument"))
   ;; Compute dependencies
@@ -251,11 +301,11 @@
     ;; List files generated by compiling modules and the linkfile
     (let ((all-c-files
            (append (map (lambda (m) (string-append (ios-build-directory) (%module-filename-c m version: version))) all-modules)
-                   (list (string-append (ios-build-directory) (ios-link-file))))))
-      ;; Create Android build directory if it doesn't exist
+                   (list (string-append (ios-build-directory) (ios-link-file-incremental))))))
+      ;; Create iOS build directory if it doesn't exist
       (unless (file-exists? (ios-build-directory))
               (make-directory (ios-build-directory)))
-      ;; Create Android assets directory if it doesn't exist
+      ;; Create iOS assets directory if it doesn't exist
       (unless (file-exists? (ios-assets-directory))
               (make-directory (ios-assets-directory)))
       ;; Generate modules (generates C code)
@@ -277,21 +327,19 @@
             (info/color 'blue "C files generated")
             (info/color 'blue "no Scheme files needed recompilation"))
         (if something-generated?
-            (fusion#ios-generate-link-file all-modules version: version))
-        
+            (fusion#ios-link-incremental all-modules version: version))
         (info/color 'blue "compiling C/Scheme code into a static lib")
-
         (let ((o-files
                (map (lambda (f) (fusion#ios-compile-c-file
                             f
                             arch: arch
                             platform-type: platform-type
+                            cc-flags: '("-D___LIBRARY")
                             verbose: verbose))
                     all-c-files)))
           (fusion#ios-create-library-archive (string-append (ios-source-directory) "libspheres.a")
                                              o-files
                                              verbose: verbose))))
-
     (info/color 'blue "compiling iOS app")
     (parameterize
      ((current-directory (ios-directory)))
@@ -299,6 +347,74 @@
                      (xcodebuild-path) " build -configuration Debug -sdk "
                      (case platform-type ((device) "iphoneos") ((simulator) "iphonesimulator"))
                      " -arch " (symbol->string arch))))))
+
+(define (fusion#ios-compile-loadable-set output-file
+                                         main-module
+                                         #!key
+                                         arch
+                                         (cond-expand-features '())
+                                         (compiler-options '())
+                                         (version compiler-options)
+                                         (compiled-modules '())
+                                         (target 'debug)
+                                         (merge-modules #f)
+                                         (verbose #f))
+  ;; Defines
+  (##cond-expand-features (append '(mobile ios) (##cond-expand-features)))
+  ;; Checks
+  (fusion#ios-project-supported?)
+  (unless arch (err "fusion#ios-compile-loadable-set: arch argument is mandatory"))
+  (unless (or (eq? arch 'i386) (eq? arch 'armv7) (eq? arch 'armv7s))
+          (err "fusion#ios-compile-loadable-set: wrong arch argument"))
+  ;; Compute dependencies
+  (let* ((modules-to-compile (append (%module-deep-dependencies-to-load main-module) (list main-module)))
+         (all-modules (append compiled-modules modules-to-compile))
+         (platform-type (case arch
+                          ((i386) 'simulator)
+                          ((armv7 armv7s) 'device))))
+    ;; List files generated by compiling modules and the linkfile
+    (let ((all-c-files
+           (append (map (lambda (m) (string-append (ios-build-directory) (%module-filename-c m version: version))) all-modules)
+                   (list (string-append (ios-build-directory) (ios-link-file-flat))))))
+      ;; Create iOS build directory if it doesn't exist
+      (unless (file-exists? (ios-build-directory))
+              (make-directory (ios-build-directory)))
+      ;; Create iOS assets directory if it doesn't exist
+      (unless (file-exists? (ios-assets-directory))
+              (make-directory (ios-assets-directory)))
+      ;; Generate modules (generates C code)
+      (let ((something-generated? #f))
+        (for-each
+         (lambda (m)
+           (let ((output-c-file (string-append (ios-build-directory) (%module-filename-c m version: version))))
+             (if ((newer-than? output-c-file)
+                  (string-append (%module-path-src m) (%module-filename-scm m)))
+                 (begin
+                   (set! something-generated? #t)
+                   (sake#compile-to-c m
+                                      cond-expand-features: (append cond-expand-features '(ios mobile))
+                                      compiler-options: compiler-options
+                                      verbose: verbose
+                                      output: output-c-file)))))
+         modules-to-compile)
+        (if something-generated?
+            (info/color 'blue "C files generated")
+            (info/color 'blue "no Scheme files needed recompilation"))
+        (if something-generated?
+            (fusion#ios-link-flat all-modules version: version))
+        (info/color 'blue "compiling C/Scheme code into a static lib")
+        (let ((o-files
+               (map (lambda (f) (fusion#ios-compile-c-file
+                            f
+                            arch: arch
+                            platform-type: platform-type
+                            cc-flags: '("-D___DYNAMIC")
+                            verbose: verbose))
+                    all-c-files)))
+          (fusion#ios-create-library-archive (string-append (ios-source-directory) "libspheres.a")
+                                             o-files
+                                             verbose: verbose))))
+    (info/color 'blue "compiling iOS loadable set")))
 
 
 
@@ -377,10 +493,10 @@
                                   SDL-link))))
 
 (define-task ios:compile ()
-  (if #t ;; #t to compile as a single app executable
+  (if #f ;; #t to compile as a single app executable
       ;; Compile all modules within the app executable
-      (fusion#ios-compile-app 'loader
-                              arch: 'i386
+      (fusion#ios-compile-app 'main
+                              arch: 'i386 ;; armv7 / armv7s
                               target: 'debug
                               cond-expand-features: '(ios debug)
                               compiler-options: '(debug)
@@ -389,33 +505,38 @@
         ;; Compile the iOS app with just the loader module
         ;; The loader will decide which object to load according to the runtime architecture
         (fusion#ios-compile-app 'loader
+                                arch: 'i386 ;; armv7 / armv7s
                                 target: 'debug
                                 cond-expand-features: '(ios debug)
-                                compiler-options: '(debug))
+                                compiler-options: '(debug)
+                                verbose: #t)
         ;; Compile the main module and its dependencies as a loadable object, for all iOS
         ;; archs. The (load) function takes care of loading code dinamically, both compiled
         ;; and source code. This can be used during iOS development in the following ways:
         ;; - Uploading code to the Resources folder (part of the app bundle)
         ;; - Uploading code to the Documents folder (created at runtime, must be uploaded when the app is running)
         ;; - Dynamically running with the Remote Debugger in Emacs or the terminal
-        (fusion#compile-loadable-set "main_i386" 'main
-                                     merge-modules: #f
-                                     target: 'debug
-                                     arch: 'ios-simulator
-                                     cond-expand-features: '(debug)
-                                     compiler-options: '(debug))
-        (fusion#compile-loadable-set "main_arm7" 'main
-                                     merge-modules: #f
-                                     target: 'debug
-                                     arch: 'arm7
-                                     cond-expand-features: '(debug)
-                                     compiler-options: '(debug))
-        (fusion#compile-loadable-set "main_arm7s" 'main
-                                     merge-modules: #f
-                                     target: 'debug
-                                     arch: 'arm7s
-                                     cond-expand-features: '(debug)
-                                     compiler-options: '(debug))
+        (fusion#ios-compile-loadable-set "main_i386" 'main
+                                         merge-modules: #f
+                                         target: 'debug
+                                         arch: 'i386
+                                         cond-expand-features: '(debug)
+                                         compiler-options: '(debug))
+        #;
+        (fusion#ios-compile-loadable-set "main_arm7" 'main
+                                         merge-modules: #f
+                                         target: 'debug
+                                         arch: 'armv7
+                                         cond-expand-features: '(debug)
+                                         compiler-options: '(debug))
+        #;
+        (fusion#ios-compile-loadable-set "main_arm7s" 'main
+                                         merge-modules: #f
+                                         target: 'debug
+                                         arch: 'armv7s
+                                         cond-expand-features: '(debug)
+                                         compiler-options: '(debug))
+        #;
         (fusion#make-ios-fat-lib ...))))
 
 (define-task ios:run ()
@@ -423,7 +544,7 @@
    ((current-directory (ios-directory)))
    (shell-command
     (string-append
-     (ios-sim-path) " launch build/Debug-iphonesimulator/SchemeSpheres.app --stdout asdf"))))
+     (ios-sim-path) " launch build/Debug-iphonesimulator/SchemeSpheres.app"))))
 
 (define-task ios:xcode ()
   (shell-command "open -a Xcode ios/SchemeSpheres.xcodeproj"))
