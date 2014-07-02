@@ -86,6 +86,7 @@
 ;; .parameter import-modules modules already generated to be linked as well
 (define (fusion#ios-compile-app main-module
                                 #!key
+                                arch
                                 (cond-expand-features '())
                                 (compiler-options '())
                                 (version compiler-options)
@@ -127,23 +128,36 @@
         (if something-generated?
             (info/color 'blue "C files generated")
             (info/color 'blue "no Scheme files needed recompilation"))
-        ;; Copy C files from both compiled and imported modules into build directory (if updated)
-        #;
-        (for-each
-         (lambda (m) (let ((source (string-append (current-build-directory)
-                                             (%module-filename-c m version: version)))
-                      (destination (string-append (ios-build-directory)
-                                                  (%module-filename-c m version: version))))
-                  (if ((newer-than? destination) source)
-                      (copy-file source destination))))
-         all-modules)
-        ;; Generate link file
-        (if something-generated?
-            (fusion#ios-generate-link-file all-modules version: version))))
-    
-    (info/color 'blue "compiling C code into a static lib"))
-    ;; TODO
-  
+
+        (info/color 'blue "compiling C/Scheme code into a static lib")
+        (let ((arch-str (symbol->string arch))
+              (platform-type 'device) ; device or simulator
+              (compiler 'gcc))
+          
+          (let ((ios-compiler-cli (string-append
+                                     " -sdk " (case platform-type
+                                                ((device) "iphoneos")
+                                                ((simulator) "iphonesimulator"))
+                                     " "
+                                     (case compiler
+                                       ((gcc) "gcc")
+                                       ((g++) "g++")
+                                       (else (err "fusion#ios-compile-app: Wrong compiler")))
+                                     " -isysroot "
+                                     "************"
+                                     " -arch " arch-str
+                                     " -miphoneos-version-min=5.0")
+
+                                    "-sdk $sdk_name gcc -isysroot $ios_sdk_dir -arch $arch -miphoneos-version-min=5.0\""))
+            (open-process (list path: "xcrun"
+                                arguments: '("")
+                                environment: '((string-append "ARCH=" ****arch)
+                                               (string-append "CC=\"xcrun -sdk $sdk_name gcc -isysroot $ios_sdk_dir -arch $arch -miphoneos-version-min=5.0\"")
+                                               (string-append "CXX=\"xcrun -sdk $sdk_name g++ -isysroot $ios_sdk_dir -arch $arch -miphoneos-version-min=5.0\"")
+                                               (string-append "CFLAGS=\"-Wno-trigraphs -Wreturn-type -Wunused-variable")
+                                               "CXXFLAGS=\"$CFLAGS\""
+                                               (string-append "LD=\"ld -arch $arch\"")
+                                               "LDFLAGS=\"\"")))))))
     (info/color 'blue "compiling iOS app")
     (parameterize
      ((current-directory (ios-directory)))
@@ -229,6 +243,7 @@
   (if #t ;; #t to compile as a single app executable
       ;; Compile all modules within the app executable
       (fusion#ios-compile-app 'main
+                              arch: 'i386
                               target: 'debug
                               cond-expand-features: '(ios debug)
                               compiler-options: '(debug))
@@ -262,7 +277,8 @@
                                      target: 'debug
                                      arch: 'arm7s
                                      cond-expand-features: '(debug)
-                                     compiler-options: '(debug)))))
+                                     compiler-options: '(debug))
+        (fusion#make-ios-fat-lib ...))))
 
 (define-task ios:run ()
   (parameterize
