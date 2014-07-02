@@ -59,6 +59,6 @@ void ___run_gambit()
 int SDL_main(int argc, char *argv[])
 {
     ___run_gambit();
-
+    
     return 0;
 }
