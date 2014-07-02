@@ -57,16 +57,23 @@
   (when (null? (fileset dir: (ios-directory) test: (extension=? "xcodeproj")))
         (err "iOS Xcode project doesn't exist. Please run iOS setup task.")))
 
+(define (fusion#ios-clean)
+  (define (delete-if-exists dir)
+    (when (file-exists? dir)
+          (sake#delete-directory dir recursive: #t force: #t)))
+  (delete-if-exists (ios-assets-directory))
+  (delete-if-exists (ios-build-directory))
+  (delete-if-exists (string-append (ios-directory) "build/")))
 
-
-(define (fusion#generate-link-file modules #!key (verbose #f) (version '()))
+(define (fusion#ios-generate-link-file modules #!key (verbose #f) (version '()))
   (info/color 'blue "generating link file")
-  (let* ((output-file (string-append (android-build-directory) (android-link-file)))
+  (let* ((output-file (string-append (ios-build-directory) (ios-link-file)))
          (code
-          `((link-incremental ',(map (lambda (m) (string-append (android-build-directory)
-                                                           (%module-filename-c m version: version)))
-                                     modules)
-                              output: ,output-file))))
+          `((link-incremental
+             ',(map (lambda (m) (string-append (ios-build-directory)
+                                          (%module-filename-c m version: version)))
+                    modules)
+             output: ,output-file))))
     (if verbose (pp code))
     (unless (= 0 (gambit-eval-here code))
             (err "error generating Gambit link file"))))
@@ -106,20 +113,22 @@
       (let ((something-generated? #f))
         (for-each
          (lambda (m)
-           (if ((newer-than? (string-append (ios-build-directory)
-                                            (%module-filename-c m version: version)))
-                (string-append (%module-path-src m) (%module-filename-scm m)))
-               (begin
-                 (set! something-generated? #t)
-                 (sake#compile-to-c m
-                                    cond-expand-features: (append cond-expand-features '(ios mobile))
-                                    compiler-options: compiler-options
-                                    verbose: verbose))))
+           (let ((output-c-file (string-append (ios-build-directory) (%module-filename-c m version: version))))
+             (if ((newer-than? output-c-file)
+                  (string-append (%module-path-src m) (%module-filename-scm m)))
+                 (begin
+                   (set! something-generated? #t)
+                   (sake#compile-to-c m
+                                      cond-expand-features: (append cond-expand-features '(ios mobile))
+                                      compiler-options: compiler-options
+                                      verbose: verbose
+                                      output: output-c-file)))))
          modules-to-compile)
         (if something-generated?
             (info/color 'blue "C files generated")
             (info/color 'blue "no Scheme files needed recompilation"))
         ;; Copy C files from both compiled and imported modules into build directory (if updated)
+        #;
         (for-each
          (lambda (m) (let ((source (string-append (current-build-directory)
                                              (%module-filename-c m version: version)))
@@ -130,7 +139,7 @@
          all-modules)
         ;; Generate link file
         (if something-generated?
-            (fusion#generate-link-file all-modules version: version))))
+            (fusion#ios-generate-link-file all-modules version: version))))
     
     (info/color 'blue "compiling C code into a static lib"))
     ;; TODO
@@ -266,7 +275,7 @@
   (shell-command "open -a Xcode ios/SchemeSpheres.xcodeproj"))
 
 (define-task ios:clean ()
-  'clean)
+  (fusion#ios-clean))
 
 (define-task ios (ios:compile ios:run)
   'ios)
@@ -294,7 +303,7 @@
         ;; function takes care of loading code dinamically, both compiled and source code.
         (fusion#compile-loadable-set "main" 'main
                                      merge-modules: #f
-                                     target: 'debug
+s                                     target: 'debug
                                      arch: 'host
                                      cond-expand-features: '(debug)
                                      compiler-options: '(debug)))))
@@ -332,8 +341,13 @@
   host:clean                Clean the generated host program files
   host                      Defaults to host:run
 
+  clean                     Clean all targets
+
 end-of-help
 )
+
+(define-task clean (android:clean ios:clean host:clean)
+  'clean)
 
 (define-task all ()
   (println help))
