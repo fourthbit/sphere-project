@@ -2,7 +2,7 @@
 
 #include "gambit.h"
 
-#define SCHEME_LIBRARY_LINKER ____20_entry__
+#define SCHEME_LIBRARY_LINKER ____20_linkfile__
 
 ___BEGIN_C_LINKAGE
 extern ___mod_or_lnk SCHEME_LIBRARY_LINKER (___global_state_struct*);

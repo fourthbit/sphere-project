@@ -14,11 +14,11 @@
 		3803215D195DF10A002B40D9 /* libgambc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3803215C195DF10A002B40D9 /* libgambc.a */; };
 		38032199195F2343002B40D9 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 38032193195F2343002B40D9 /* main.c */; };
 		3803219A195F2343002B40D9 /* UIDevice+Hardware.m in Sources */ = {isa = PBXBuildFile; fileRef = 38032195195F2343002B40D9 /* UIDevice+Hardware.m */; };
-		380340831961DA9800EBEDB6 /* libspheres.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 380340821961DA9800EBEDB6 /* libspheres.a */; };
 		38A7C10A1959994F00FD6D80 /* doxyfile in Resources */ = {isa = PBXBuildFile; fileRef = 38A7C0BC1959994F00FD6D80 /* doxyfile */; };
 		38A7C10B1959994F00FD6D80 /* SDL_config.h.cmake in Resources */ = {isa = PBXBuildFile; fileRef = 38A7C0C51959994F00FD6D80 /* SDL_config.h.cmake */; };
 		38A7C10C1959994F00FD6D80 /* SDL_config.h.in in Resources */ = {isa = PBXBuildFile; fileRef = 38A7C0C61959994F00FD6D80 /* SDL_config.h.in */; };
 		38A7C10D1959994F00FD6D80 /* libSDL2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 38A7C1091959994F00FD6D80 /* libSDL2.a */; };
+		38EFD1171964726B00BDB195 /* libspheres.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 38EFD1161964726B00BDB195 /* libspheres.a */; };
 		FD779EDE0E26BA1200F39101 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD779EDD0E26BA1200F39101 /* CoreAudio.framework */; };
 		FD77A07D0E26BD8C00F39101 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = FD77A07C0E26BD8C00F39101 /* Icon.png */; };
 		FD77A07F0E26BDA900F39101 /* Default.png in Resources */ = {isa = PBXBuildFile; fileRef = FD77A07E0E26BDA900F39101 /* Default.png */; };
@@ -38,7 +38,6 @@
 		38032193195F2343002B40D9 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = src/main.c; sourceTree = "<group>"; };
 		38032194195F2343002B40D9 /* UIDevice+Hardware.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "UIDevice+Hardware.h"; path = "src/UIDevice+Hardware.h"; sourceTree = "<group>"; };
 		38032195195F2343002B40D9 /* UIDevice+Hardware.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "UIDevice+Hardware.m"; path = "src/UIDevice+Hardware.m"; sourceTree = "<group>"; };
-		380340821961DA9800EBEDB6 /* libspheres.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libspheres.a; path = src/libspheres.a; sourceTree = "<group>"; };
 		38A7C0BA1959994F00FD6D80 /* begin_code.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = begin_code.h; sourceTree = "<group>"; };
 		38A7C0BB1959994F00FD6D80 /* close_code.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = close_code.h; sourceTree = "<group>"; };
 		38A7C0BC1959994F00FD6D80 /* doxyfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = doxyfile; sourceTree = "<group>"; };
@@ -118,6 +117,7 @@
 		38A7C1061959994F00FD6D80 /* SDL_version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDL_version.h; sourceTree = "<group>"; };
 		38A7C1071959994F00FD6D80 /* SDL_video.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDL_video.h; sourceTree = "<group>"; };
 		38A7C1091959994F00FD6D80 /* libSDL2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libSDL2.a; sourceTree = "<group>"; };
+		38EFD1161964726B00BDB195 /* libspheres.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libspheres.a; path = src/libspheres.a; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FD779EDD0E26BA1200F39101 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		FD77A07C0E26BD8C00F39101 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
@@ -139,7 +139,7 @@
 				FD77A0850E26BDB800F39101 /* AudioToolbox.framework in Frameworks */,
 				FDB8BFC60E5A0F6A00980157 /* CoreGraphics.framework in Frameworks */,
 				38A7C10D1959994F00FD6D80 /* libSDL2.a in Frameworks */,
-				380340831961DA9800EBEDB6 /* libspheres.a in Frameworks */,
+				38EFD1171964726B00BDB195 /* libspheres.a in Frameworks */,
 				3803215D195DF10A002B40D9 /* libgambc.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -171,7 +171,7 @@
 		29B97315FDCFA39411CA2CEA /* src */ = {
 			isa = PBXGroup;
 			children = (
-				380340821961DA9800EBEDB6 /* libspheres.a */,
+				38EFD1161964726B00BDB195 /* libspheres.a */,
 				38032193195F2343002B40D9 /* main.c */,
 				38032194195F2343002B40D9 /* UIDevice+Hardware.h */,
 				38032195195F2343002B40D9 /* UIDevice+Hardware.m */,
@@ -429,6 +429,7 @@
 					"-x",
 					"objective-c",
 					"-D___LIBRARY",
+					"-v",
 				);
 				OTHER_LDFLAGS = (
 					"-v",
@@ -460,6 +461,7 @@
 					"-x",
 					"objective-c",
 					"-D___LIBRARY",
+					"-v",
 				);
 				OTHER_LDFLAGS = (
 					"-v",
