@@ -189,10 +189,10 @@
     output-file))
 
 
-(define (fusion#ios-run-compiler arch
+(define (fusion#ios-run-compiler #!key
+                                 arch
                                  platform-type
-                                 compiler-arguments
-                                 #!key
+                                 arguments
                                  (compiler 'gcc)
                                  (verbose #f))
   (let ((arch-str (symbol->string arch))
@@ -223,12 +223,12 @@
             (info/color 'green "Compiler command:")
             (println selected-compiler-cli)
             (info/color 'green "Compiler args:")
-            (println (string-join compiler-arguments)))
+            (println (string-join arguments)))
       (let ((compilation-process
              (open-process
               (list path: "xcrun"
                     arguments: (append ((string-split #\space) selected-compiler-cli)
-                                       compiler-arguments)
+                                       arguments)
                     environment:
                     (list (string-append "ARCH=" arch-str)
                           (string-append "CC=\"xcrun " ios-cc-cli "\"")
@@ -240,35 +240,42 @@
         (unless (zero? (process-status compilation-process))
                 (err "fusion#ios-run-compiler: error running command"))))))
 
-(define (fusion#ios-compile-c-file input-c-file
-                                   #!key
-                                   (output-c-file (string-append (path-strip-extension input-c-file) ".o"))
-                                   arch
-                                   platform-type
-                                   (compiler 'gcc)
-                                   (cc-flags '())
-                                   (verbose #f))
-  (fusion#ios-run-compiler arch
-                           platform-type
-                           `("-x"
-                             "objective-c"
-                             ,(string-append "-I" (ios-directory) "gambit/include")
-                             ,@cc-flags
-                             ,(string-append "-I" (ios-source-directory))
-                             "-I/usr/local/Gambit-C/spheres/sdl2/deps/SDL2-2.0.3/include" ;;XXX TODO
-                             ;;,(string-append "-I" ios-sdk-directory "/System/Library/Frameworks/OpenGLES.framework/Headers") ;; XXX TODO
-                             ;; "-w" ;; XXX TODO
-                             ;; **************
-                             ;; **************
-                             ;; **************
-                             ;; **************
-                             "-c"
-                             ,input-c-file
-                             "-o"
-                             ,output-c-file)
-                           compiler: compiler
-                           verbose: verbose)
-  output-c-file)
+(define (fusion#ios-run-linker #!key
+                                 arch
+                                 platform-type
+                                 arguments
+                                 (verbose #f))
+  (let ((arch-str (symbol->string arch))
+        (sdk-name (case platform-type ((device) "iphoneos") ((simulator) "iphonesimulator")))
+        (ios-sdk-directory (case platform-type
+                             ((device) (ios-device-sdk-directory))
+                             ((simulator) (ios-simulator-sdk-directory)))))
+    ;; Checks
+    (unless (or (eq? platform-type 'simulator) (eq? platform-type 'device))
+            (err "fusion#compile-ios-app: wrong platform-type"))
+    ;; Construct compiler strings
+    (let ((ios-ld-cli (string-append
+                       "-sdk " sdk-name
+                       " ld"
+                       " -syslibroot " ios-sdk-directory
+                       " -arch " arch-str)))
+      (when verbose
+            (info/color 'green "Compiler command:")
+            (println ios-ld-cli)
+            (info/color 'green "Compiler args:")
+            (println (string-join arguments)))
+      (let ((compilation-process
+             (open-process
+              (list path: "xcrun"
+                    arguments: (append ((string-split #\space) ios-ld-cli)
+                                       arguments)
+                    environment:
+                    (list (string-append "ARCH=" arch-str)
+                          (string-append "LD=\"ld -arch " arch-str "\"")
+                          "LDFLAGS=\"\"")))))
+        (unless (zero? (process-status compilation-process))
+                (err "fusion#ios-run-linker: error running command"))))))
+
 
 (define (fusion#ios-create-library-archive lib-name o-files #!key (verbose #f))
   (shell-command (string-append "ar r" (if verbose "cv " " ") lib-name " " (string-join o-files))))
@@ -330,12 +337,30 @@
             (fusion#ios-link-incremental all-modules version: version))
         (info/color 'blue "compiling C/Scheme code into a static lib")
         (let ((o-files
-               (map (lambda (f) (fusion#ios-compile-c-file
-                            f
-                            arch: arch
-                            platform-type: platform-type
-                            cc-flags: '("-D___LIBRARY")
-                            verbose: verbose))
+               (map (lambda (f)
+                      (let ((output-c-file (string-append (path-strip-extension f) ".o")))
+                        (fusion#ios-run-compiler
+                         arch: arch
+                         platform-type: platform-type
+                         arguments: `("-x"
+                                      "objective-c"
+                                      ,(string-append "-I" (ios-directory) "gambit/include")
+                                      "-D___LIBRARY"
+                                      ,(string-append "-I" (ios-source-directory))
+                                      "-I/usr/local/Gambit-C/spheres/sdl2/deps/SDL2-2.0.3/include" ;;XXX TODO
+                                      ;;,(string-append "-I" ios-sdk-directory "/System/Library/Frameworks/OpenGLES.framework/Headers") ;; XXX TODO
+                                      ;; "-w" ;; XXX TODO
+                                      ;; **************
+                                      ;; **************
+                                      ;; **************
+                                      ;; **************
+                                      "-c"
+                                      ,f
+                                      "-o"
+                                      ,output-c-file)
+                         compiler: 'gcc
+                         verbose: verbose)
+                        output-c-file))
                     all-c-files)))
           (fusion#ios-create-library-archive (string-append (ios-source-directory) "libspheres.a")
                                              o-files
@@ -402,19 +427,65 @@
             (info/color 'blue "no Scheme files needed recompilation"))
         (if something-generated?
             (fusion#ios-link-flat all-modules version: version))
-        (info/color 'blue "compiling C/Scheme code into a static lib")
+        (info/color 'blue "compiling C/Scheme code into a loadable object")
+        ;; Compile objects
         (let ((o-files
-               (map (lambda (f) (fusion#ios-compile-c-file
-                            f
-                            arch: arch
-                            platform-type: platform-type
-                            cc-flags: '("-D___DYNAMIC")
-                            verbose: verbose))
+               (map (lambda (f)
+                      (let* ((output-c-file (string-append (path-strip-extension f) ".o"))
+                             (args `("-x"
+                                     "objective-c"
+                                     ,(string-append "-I" (ios-directory) "gambit/include")
+                                     "-D___DYNAMIC"
+                                     ,(string-append "-I" (ios-source-directory))
+                                     ;;"-I/usr/local/Gambit-C/spheres/sdl2/deps/SDL2-2.0.3/include" ;;XXX TODO
+                                     ;;,(string-append "-I" ios-sdk-directory "/System/Library/Frameworks/OpenGLES.framework/Headers") ;; XXX TODO
+                                     ;; "-w" ;; XXX TODO
+                                     ;; **************
+                                     ;; **************
+                                     ;; **************
+                                     ;; **************
+                                     "-c"
+                                     ,f
+                                     "-o"
+                                     ,output-c-file)))
+                        (fusion#ios-run-compiler
+                         arch: arch
+                         platform-type: platform-type
+                         compiler: 'gcc
+                         arguments: args
+                         verbose: verbose)
+                        output-c-file))
                     all-c-files)))
-          (fusion#ios-create-library-archive (string-append (ios-source-directory) "libspheres.a")
-                                             o-files
-                                             verbose: verbose))))
-    (info/color 'blue "compiling iOS loadable set")))
+          (when #t ;;something-generated? ;; XXX TODO
+            (info/color 'blue "object files generated:")
+            (pp o-files))
+          ;; Make bundle
+          'bundle
+          
+          (fusion#ios-run-linker
+           arch: arch
+           platform-type: platform-type
+           ;; Flags not included:
+           ;; "-lcrt1.o" This one is for the executables
+           arguments: `( ;; TODO XXX         MOVE ESSENTIAL TO PROCEDURE
+                        "-bundle"
+                        "-demangle"
+                        "-dynamic"
+                        "-ObjC"
+                        "-all_load"
+                        "-dead_strip"
+                        "-ios_simulator_version_min" "5.0"
+                        "-objc_abi_version" "2"
+                        "-no_implicit_dylibs"
+                        "-framework" "Foundation"
+                        "-framework" "UIKit"
+                        "-lobjc"
+                        "-lSystem"
+                        ;;"-demangle -dynamic -arch i386 -all_load -dead_strip -ios_simulator_version_min 7.1.0 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator7.1.sdk -ObjC -o /Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Products/Debug-iphonesimulator/SchemeSpheres.app/SchemeSpheres -lcrt1.o -L/Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Products/Debug-iphonesimulator -L/Users/Alvaro/Dropbox/working/DaTest/ios/SDL/lib -L/Users/Alvaro/Dropbox/working/DaTest/ios/gambit -L/Users/Alvaro/Dropbox/working/DaTest/ios/gambit/lib -L/Users/Alvaro/Dropbox/working/DaTest/ios/src -filelist /Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Intermediates/SchemeSpheres.build/Debug-iphonesimulator/SchemeSpheres.build/Objects-normal/i386/SchemeSpheres.LinkFileList -objc_abi_version 2 -no_implicit_dylibs -framework Foundation -framework UIKit -framework OpenGLES -framework QuartzCore -framework CoreAudio -framework AudioToolbox -framework CoreGraphics -lSDL2 -lgambc -dependency_info /Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Intermediates/SchemeSpheres.build/Debug-iphonesimulator/SchemeSpheres.build/Objects-normal/i386/SchemeSpheres_dependency_info.dat -framework Foundation -lobjc -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/5.1/lib/darwin/libclang_rt.ios.a -F/Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Products/Debug-iphonesimulator"
+                        ,@o-files
+                        "-o"
+                        ,output-file)
+           verbose: verbose))))))
 
 
 
@@ -521,7 +592,8 @@
                                          target: 'debug
                                          arch: 'i386
                                          cond-expand-features: '(debug)
-                                         compiler-options: '(debug))
+                                         compiler-options: '(debug)
+                                         verbose: #t)
         #;
         (fusion#ios-compile-loadable-set "main_arm7" 'main
                                          merge-modules: #f
