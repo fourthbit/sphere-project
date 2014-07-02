@@ -1,19 +1,79 @@
+(define (string-split sep)
+        (lambda (str)
+          (call-with-input-string
+           str
+           (lambda (p)
+             (read-all p (lambda (p) (read-line p sep)))))))
+
+(define (string-concatenate strings)
+  (define (%string-copy! to tstart from fstart fend)
+    (if (> fstart tstart)
+        (do ((i fstart (+ i 1))
+             (j tstart (+ j 1)))
+            ((>= i fend))
+          (string-set! to j (string-ref from i)))
+
+        (do ((i (- fend 1)                    (- i 1))
+             (j (+ -1 tstart (- fend fstart)) (- j 1)))
+            ((< i fstart))
+          (string-set! to j (string-ref from i)))))
+  (let* ((total (do ((strings strings (cdr strings))
+                     (i 0 (+ i (string-length (car strings)))))
+                    ((not (pair? strings)) i)))
+         (ans (make-string total)))
+    (let lp ((i 0) (strings strings))
+      (if (pair? strings)
+          (let* ((s (car strings))
+                 (slen (string-length s)))
+            (%string-copy! ans i s 0 slen)
+            (lp (+ i slen) (cdr strings)))))
+    ans))
+
+(define (string-join strings #!key (delim " ") (grammar 'infix))
+        (let ((buildit (lambda (lis final)
+                         (let recur ((lis lis))
+                           (if (pair? lis)
+                               (cons delim (cons (car lis) (recur (cdr lis))))
+                               final)))))
+          (cond ((pair? strings)
+                 (string-concatenate
+                  (case grammar
+                    ((infix strict-infix)
+                     (cons (car strings) (buildit (cdr strings) '())))
+                    ((prefix) (buildit strings '()))
+                    ((suffix)
+                     (cons (car strings) (buildit (cdr strings) (list delim))))
+                    (else (error "Illegal join grammar"
+                                 grammar string-join)))))
+                ((not (null? strings))
+                 (error "STRINGS parameter not list." strings string-join))
+                ((eq? grammar 'strict-infix)
+                 (error "Empty list cannot be joined with STRICT-INFIX grammar."
+                        string-join))
+                (else ""))))
+
+
+
+
+
+
+
 (define ios-directory
   (make-parameter "ios/"))
 
-(define ios-src-directory-suffix
+(define ios-source-directory-suffix
   (make-parameter "src/"))
 
-(define ios-src-directory
+(define ios-source-directory
   (make-parameter
-   (string-append (ios-directory) (ios-src-directory-suffix))))
+   (string-append (ios-directory) (ios-source-directory-suffix))))
 
 (define ios-build-directory-suffix
   (make-parameter "build/"))
 
 (define ios-build-directory
   (make-parameter
-   (string-append (ios-src-directory) (ios-build-directory-suffix))))
+   (string-append (ios-source-directory) (ios-build-directory-suffix))))
 
 (define ios-assets-directory-suffix
   (make-parameter "assets/"))
@@ -52,8 +112,8 @@
           (err "iOS directory doesn't exist. Please run iOS setup task."))
   (when (null? (directory-files (ios-directory)))
         (err "iOS directory doesn't seem to have anything. Please run iOS setup task."))
-  (unless (file-exists? (ios-src-directory))
-          (err "iOS src/ directory doesn't exist. Please run iOS setup task."))
+  (unless (file-exists? (ios-source-directory))
+          (err "iOS source directory doesn't exist. Please run iOS setup task."))
   (when (null? (fileset dir: (ios-directory) test: (extension=? "xcodeproj")))
         (err "iOS Xcode project doesn't exist. Please run iOS setup task.")))
 
@@ -64,6 +124,7 @@
   (delete-if-exists (ios-assets-directory))
   (delete-if-exists (ios-build-directory))
   (delete-if-exists (string-append (ios-directory) "build/")))
+
 
 (define (fusion#ios-generate-link-file modules #!key (verbose #f) (version '()))
   (info/color 'blue "generating link file")
@@ -79,7 +140,85 @@
             (err "error generating Gambit link file"))))
 
 
+(define (fusion#ios-compile-c-file input-c-file
+                                   #!key
+                                   (output-c-file (string-append (path-strip-extension input-c-file) ".o"))
+                                   arch
+                                   platform-type
+                                   (compiler 'gcc)
+                                   (verbose #f))
+  (let ((arch-str (symbol->string arch))
+        (sdk-name (case platform-type ((device) "iphoneos") ((simulator) "iphonesimulator")))
+        (ios-sdk-dir
+         (let* ((sdk-dir-process
+                 (open-process (list path: "tools/get_ios_sdk_dir"
+                                     arguments: (case platform-type
+                                                  ((device) '("iPhoneOS"))
+                                                  ((simulator) '("iPhoneSimulator"))))))
+                (result (read-line sdk-dir-process)))
+           (unless (zero? (process-status sdk-dir-process))
+                   (err "fusion#compile-ios-app: error running script tools/get_ios_sdk_dir"))
+           (close-input-port sdk-dir-process)
+           result)))
+    ;; Checks
+    (unless (or (eq? platform-type 'simulator) (eq? platform-type 'device))
+            (err "fusion#compile-ios-app: wrong platform-type"))
+    (unless (or (eq? compiler 'gcc) (eq? compiler 'g++))
+            (err "fusion#compile-ios-app: wrong compiler"))
+    ;; Construct compiler strings
+    (let* ((ios-cc-cli (string-append
+                        "-sdk " sdk-name
+                        " gcc"
+                        " -isysroot " ios-sdk-dir
+                        " -arch " arch-str
+                        " -miphoneos-version-min=5.0"))
+           (ios-cxx-cli (string-append
+                         "-sdk " sdk-name
+                         " g++"
+                         " -isysroot " ios-sdk-dir
+                         " -arch " arch-str
+                         " -miphoneos-version-min=5.0"))
+           (selected-compiler-cli (case compiler ((gcc) ios-cc-cli) ((g++) ios-cxx-cli)))
+           (compiler-arguments `("-x"
+                                 "objective-c"
+                                 ,(string-append "-I" (ios-directory) "gambit/include")
+                                 "-D___LIBRARY"
+                                 "-I/Users/Alvaro/Dropbox/working/DaTest/ios/src"
+                                 ,(string-append "-I" (ios-source-directory))
+                                 "-I/usr/local/Gambit-C/spheres/sdl2/deps/SDL2-2.0.3/include" ;;XXX TODO
+                                 ,(string-append "-I" ios-sdk-dir "/System/Library/Frameworks/OpenGLES.framework/Headers") ;; XXX TODO
+                                 "-w" ;; XXX TODO
+                                 "-c"
+                                 ,input-c-file
+                                 "-o"
+                                 ,output-c-file)))
+      (when verbose
+            (info/color 'green "Compiler command:")
+            (println selected-compiler-cli)
+            (info/color 'green "Compiler args:")
+            (println (let recur ((args compiler-arguments))
+                       (if (null? args)
+                           ""
+                           (string-append (car args) " " (recur (cdr args)))))))
+      (let ((compilation-process
+             (open-process
+              (list path: "xcrun"
+                    arguments: (append ((string-split #\space) selected-compiler-cli)
+                                       compiler-arguments)
+                    environment:
+                    (list (string-append "ARCH=" arch-str)
+                          (string-append "CC=\"xcrun " ios-cc-cli "\"")
+                          (string-append "CC=\"xcrun " ios-cxx-cli "\"")
+                          (string-append "CFLAGS=\"-Wno-trigraphs -Wreturn-type -Wunused-variable\"")
+                          "CXXFLAGS=\"-Wno-trigraphs -Wreturn-type -Wunused-variable\""
+                          (string-append "LD=\"ld -arch " arch-str "\"")
+                          "LDFLAGS=\"\"")))))
+        (unless (zero? (process-status compilation-process))
+                (err (string-append "fusion#ios-compile-c-file: error compiling file " input-c-file)))
+        output-c-file))))
 
+(define (fusion#ios-create-library-archive lib-name o-files #!key (verbose #f))
+  (shell-command (string-append "ar r" (if verbose "cv " " ") lib-name " " (string-join o-files))))
 
 ;;! Compile App
 ;; .parameter main-module main-module of the Android App
@@ -97,13 +236,15 @@
   (##cond-expand-features (append '(mobile android) (##cond-expand-features)))
   ;; Checks
   (fusion#ios-project-supported?)
+  (unless (or (eq? arch 'i386) (eq? arch 'armv7) (eq? arch 'armv7s))
+          (err "fusion#ios-compile-app: wrong arch argument"))
   ;; Compute dependencies
   (let* ((modules-to-compile (append (%module-deep-dependencies-to-load main-module) (list main-module)))
          (all-modules (append compiled-modules modules-to-compile)))
     ;; List files generated by compiling modules and the linkfile
     (let ((all-c-files
-           (append (map (lambda (m) (string-append (ios-build-directory-suffix) (%module-filename-c m version: version))) all-modules)
-                   (list (string-append (ios-build-directory-suffix) (android-link-file))))))
+           (append (map (lambda (m) (string-append (ios-build-directory) (%module-filename-c m version: version))) all-modules)
+                   (list (string-append (ios-build-directory) (ios-link-file))))))
       ;; Create Android build directory if it doesn't exist
       (unless (file-exists? (ios-build-directory))
               (make-directory (ios-build-directory)))
@@ -128,40 +269,30 @@
         (if something-generated?
             (info/color 'blue "C files generated")
             (info/color 'blue "no Scheme files needed recompilation"))
-
+        (if something-generated?
+            (fusion#ios-generate-link-file all-modules version: version))
+        
         (info/color 'blue "compiling C/Scheme code into a static lib")
-        (let ((arch-str (symbol->string arch))
-              (platform-type 'device) ; device or simulator
-              (compiler 'gcc))
-          
-          (let ((ios-compiler-cli (string-append
-                                     " -sdk " (case platform-type
-                                                ((device) "iphoneos")
-                                                ((simulator) "iphonesimulator"))
-                                     " "
-                                     (case compiler
-                                       ((gcc) "gcc")
-                                       ((g++) "g++")
-                                       (else (err "fusion#ios-compile-app: Wrong compiler")))
-                                     " -isysroot "
-                                     "************"
-                                     " -arch " arch-str
-                                     " -miphoneos-version-min=5.0")
 
-                                    "-sdk $sdk_name gcc -isysroot $ios_sdk_dir -arch $arch -miphoneos-version-min=5.0\""))
-            (open-process (list path: "xcrun"
-                                arguments: '("")
-                                environment: '((string-append "ARCH=" ****arch)
-                                               (string-append "CC=\"xcrun -sdk $sdk_name gcc -isysroot $ios_sdk_dir -arch $arch -miphoneos-version-min=5.0\"")
-                                               (string-append "CXX=\"xcrun -sdk $sdk_name g++ -isysroot $ios_sdk_dir -arch $arch -miphoneos-version-min=5.0\"")
-                                               (string-append "CFLAGS=\"-Wno-trigraphs -Wreturn-type -Wunused-variable")
-                                               "CXXFLAGS=\"$CFLAGS\""
-                                               (string-append "LD=\"ld -arch $arch\"")
-                                               "LDFLAGS=\"\"")))))))
+        (let ((o-files
+               (map (lambda (f) (fusion#ios-compile-c-file
+                            f
+                            arch: arch
+                            platform-type: (case arch ((i386) 'simulator) ((armv7 armv7s) 'device))
+                            verbose: verbose))
+                    all-c-files)))
+          (fusion#ios-create-library-archive (string-append (ios-source-directory) "libspheres.a")
+                                             o-files
+                                             verbose: verbose))))
+
     (info/color 'blue "compiling iOS app")
+    
+    
+    #;
     (parameterize
      ((current-directory (ios-directory)))
-     (shell-command (string-append (xcodebuild-path) " build -configuration Debug"))))
+     (shell-command (string-append (xcodebuild-path) " build -configuration Debug")))
+    ))
 
 
 
@@ -242,11 +373,12 @@
 (define-task ios:compile ()
   (if #t ;; #t to compile as a single app executable
       ;; Compile all modules within the app executable
-      (fusion#ios-compile-app 'main
+      (fusion#ios-compile-app 'loader
                               arch: 'i386
                               target: 'debug
                               cond-expand-features: '(ios debug)
-                              compiler-options: '(debug))
+                              compiler-options: '(debug)
+                              verbose: #t)
       (begin
         ;; Compile the iOS app with just the loader module
         ;; The loader will decide which object to load according to the runtime architecture
@@ -319,7 +451,7 @@
         ;; function takes care of loading code dinamically, both compiled and source code.
         (fusion#compile-loadable-set "main" 'main
                                      merge-modules: #f
-s                                     target: 'debug
+                                     s                                     target: 'debug
                                      arch: 'host
                                      cond-expand-features: '(debug)
                                      compiler-options: '(debug)))))
@@ -335,29 +467,29 @@ s                                     target: 'debug
 
 (define help #<<end-of-help
   
-  Tasks (run with 'sake <task>')
-  ------------------------------
+    Tasks (run with 'sake <task>')
+    ------------------------------
   
-  android:setup             Setup Android project before running other tasks
-  android:compile           Compile the Android app
-  android:install           Install App in current Android device (hardware or emulated)
-  android:run               Run App in current Android device
-  android:clean             Clean all Android generated files
-  android                   Execute compile, install, run
+    android:setup             Setup Android project before running other tasks
+    android:compile           Compile the Android app
+    android:install           Install App in current Android device (hardware or emulated)
+    android:run               Run App in current Android device
+    android:clean             Clean all Android generated files
+    android                   Execute compile, install, run
 
-  ios:setup                 Setup iOS project before running other tasks
-  ios:compile               Compile the iOS app
-  ios:run                   Launch the iOS Simulator and run the app
-  ios:xcode                 Open the iOS project in Xcode
-  ios:clean                 Clean all iOS generated files
-  ios                       Execute compile and run
+    ios:setup                 Setup iOS project before running other tasks
+    ios:compile               Compile the iOS app
+    ios:run                   Launch the iOS Simulator and run the app
+    ios:xcode                 Open the iOS project in Xcode
+    ios:clean                 Clean all iOS generated files
+    ios                       Execute compile and run
   
-  host:compile              Compile the host program as standalone
-  host:run                  Run the host OS (Linux/OSX) program interpreted
-  host:clean                Clean the generated host program files
-  host                      Defaults to host:run
+    host:compile              Compile the host program as standalone
+    host:run                  Run the host OS (Linux/OSX) program interpreted
+    host:clean                Clean the generated host program files
+    host                      Defaults to host:run
 
-  clean                     Clean all targets
+    clean                     Clean all targets
 
 end-of-help
 )
