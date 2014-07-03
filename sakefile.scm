@@ -332,37 +332,41 @@
                                       verbose: verbose
                                       output: output-c-file)))))
          modules-to-compile)
-        (if something-generated?
-            (info/color 'blue "C files generated")
-            (info/color 'blue "no Scheme files needed recompilation"))
-        (if something-generated?
+        (when something-generated?
+            (info/color 'blue "new C files generated")
             (fusion#ios-link-incremental link-file all-modules version: version))
-        (info/color 'blue "compiling C/Scheme code into a static lib")
+        (set! something-generated? #f)
+        (info/color 'green "compiling C/Scheme code into a static lib")
         (let ((o-files
                (map (lambda (f)
-                      (let ((output-c-file (string-append (path-strip-extension f) ".o")))
-                        (fusion#ios-run-compiler
-                         arch: arch
-                         platform-type: platform-type
-                         arguments: `("-x"
-                                      "objective-c"
-                                      ,(string-append "-I" (ios-directory) "gambit/include")
-                                      "-D___LIBRARY"
-                                      ,(string-append "-I" (ios-source-directory))
-                                      "-I/usr/local/Gambit-C/spheres/sdl2/deps/SDL2-2.0.3/include" ;;XXX TODO
-                                      ;;,(string-append "-I" ios-sdk-directory "/System/Library/Frameworks/OpenGLES.framework/Headers") ;; XXX TODO
-                                      ;; "-w" ;; XXX TODO
-                                      ;; **************
-                                      ;; **************
-                                      ;; **************
-                                      ;; **************
-                                      "-c"
-                                      ,f
-                                      "-o"
-                                      ,output-c-file)
-                         compiler: 'gcc
-                         verbose: verbose)
-                        output-c-file))
+                      (let ((output-o-file (string-append (path-strip-extension f) ".o")))
+                        (when ((newer-than? output-o-file) f)
+                              (unless something-generated?
+                                      (info/color 'blue "compiling updated C files:")
+                                      (info/color 'purple (string-append " >>>  " f)))
+                              (set! something-generated? #t)
+                              (fusion#ios-run-compiler
+                               arch: arch
+                               platform-type: platform-type
+                               arguments: `("-x"
+                                            "objective-c"
+                                            ,(string-append "-I" (ios-directory) "gambit/include")
+                                            "-D___LIBRARY"
+                                            ,(string-append "-I" (ios-source-directory))
+                                            "-I/usr/local/Gambit-C/spheres/sdl2/deps/SDL2-2.0.3/include" ;;XXX TODO
+                                            ;;,(string-append "-I" ios-sdk-directory "/System/Library/Frameworks/OpenGLES.framework/Headers") ;; XXX TODO
+                                            ;; "-w" ;; XXX TODO
+                                            ;; **************
+                                            ;; **************
+                                            ;; **************
+                                            ;; **************
+                                            "-c"
+                                            ,f
+                                            "-o"
+                                            ,output-o-file)
+                               compiler: 'gcc
+                               verbose: verbose))
+                        output-o-file))
                     all-c-files)))
           (fusion#ios-create-library-archive (string-append (ios-source-directory) "libspheres.a")
                                              o-files
@@ -425,16 +429,14 @@
                                       verbose: verbose
                                       output: output-c-file)))))
          modules-to-compile)
-        (if something-generated?
-            (info/color 'blue "C files generated")
-            (info/color 'blue "no Scheme files needed recompilation"))
-        (if something-generated?
+        (when something-generated?
+            (info/color 'blue "new C files generated")
             (fusion#ios-link-flat link-file all-modules version: version))
-        (info/color 'blue "compiling C/Scheme code into a loadable object")
         ;; Compile objects
+        (set! something-generated? #f)
         (let ((o-files
                (map (lambda (f)
-                      (let* ((output-c-file (string-append (path-strip-extension f) ".o"))
+                      (let* ((output-o-file (string-append (path-strip-extension f) ".o"))
                              (args `("-x"
                                      "objective-c"
                                      ,(string-append "-I" (ios-directory) "gambit/include")
@@ -450,21 +452,22 @@
                                      "-c"
                                      ,f
                                      "-o"
-                                     ,output-c-file)))
-                        (fusion#ios-run-compiler
-                         arch: arch
-                         platform-type: platform-type
-                         compiler: 'gcc
-                         arguments: args
-                         verbose: verbose)
-                        output-c-file))
+                                     ,output-o-file)))
+                        (when ((newer-than? output-o-file) f)
+                              (unless something-generated?
+                                      (info/color 'blue "compiling updated C files:")
+                                      (info/color 'purple (string-append " >>>  " f)))
+                              (set! something-generated? #t)
+                              (fusion#ios-run-compiler
+                               arch: arch
+                               platform-type: platform-type
+                               compiler: 'gcc
+                               arguments: args
+                               verbose: verbose))
+                        output-o-file))
                     all-c-files)))
-          (when #t ;;something-generated? ;; XXX TODO
-            (info/color 'blue "object files generated:")
-            (for-each (lambda (o) (println (string-append " >  " o))) o-files))
           ;; Make bundle
-          'bundle
-          
+          (info/color 'green "compiling C/Scheme code into a loadable object")
           (fusion#ios-run-linker
            arch: arch
            platform-type: platform-type
@@ -524,24 +527,23 @@
                                   cond-expand-features: '(debug)
                                   compiler-options: '(debug))
       (begin
-        ;; Compile the Android app with just the loader code
-        (fusion#android-compile-app "my-app" 'loader
-                                    target: 'debug
-                                    cond-expand-features: '(ios debug)
-                                    compiler-options: '(debug))
         ;; Compile the main module and its dependencies as a loadable object for the ARM
         ;; arch.  The (load) function takes care of loading code dinamically, both compiled
         ;; and source code. This can be used during Android development in the following ways:
         ;; - Uploading the code to the SD card
         ;; - Bundling the code within the APK
         ;; - Dynamically running with the Remote Debugger in Emacs or the terminal
-        (fusion#compile-loadable-set "main_arm" 'main
+        (fusion#compile-loadable-set "main_arm.o1" 'main
                                      merge-modules: #f
                                      target: 'debug
                                      arch: 'android-arm
                                      cond-expand-features: '(debug)
                                      compiler-options: '(debug))
-        (fusion#android-upload-file "main_arm.o1"))))
+        ;; Compile the Android app with just the loader code
+        (fusion#android-compile-app "my-app" 'loader
+                                    target: 'debug
+                                    cond-expand-features: '(ios debug)
+                                    compiler-options: '(debug)))))
 
 (define-task android:install ()
   (fusion#android-install 'debug))
@@ -578,14 +580,6 @@
                               compiler-options: '(debug)
                               verbose: #t)
       (begin
-        ;; Compile the iOS app with just the loader module
-        ;; The loader will decide which object to load according to the runtime architecture
-        (fusion#ios-compile-app 'loader
-                                arch: 'i386 ;; armv7 / armv7s
-                                target: 'debug
-                                cond-expand-features: '(ios debug)
-                                compiler-options: '(debug)
-                                verbose: #t)
         ;; Compile the main module and its dependencies as a loadable object, for all iOS
         ;; archs. The (load) function takes care of loading code dinamically, both compiled
         ;; and source code. This can be used during iOS development in the following ways:
@@ -614,7 +608,15 @@
                                          cond-expand-features: '(debug)
                                          compiler-options: '(debug))
         #;
-        (fusion#make-ios-fat-lib ...))))
+        (fusion#make-ios-fat-lib ...)
+        ;; Compile the iOS app with just the loader module
+        ;; The loader will decide which object to load according to the runtime architecture
+        (fusion#ios-compile-app 'loader
+                                arch: 'i386 ;; armv7 / armv7s
+                                target: 'debug
+                                cond-expand-features: '(ios debug)
+                                compiler-options: '(debug)
+                                verbose: #t))))
 
 (define-task ios:run ()
   (parameterize
