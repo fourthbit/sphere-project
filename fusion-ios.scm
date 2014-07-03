@@ -337,7 +337,7 @@
                                          (target 'debug)
                                          (merge-modules #f)
                                          (verbose #f))
-  ;; Defines
+  ;; Cond-expand features (relevant within the Sake environment)
   (##cond-expand-features (append '(mobile ios) (##cond-expand-features)))
   ;; Checks
   (fusion#ios-project-supported?)
