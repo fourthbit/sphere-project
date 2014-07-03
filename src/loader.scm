@@ -30,11 +30,12 @@ end-c-lambda
  (else
   #!void))
 
+(load "main.o1")
 
-(cond
- ((file-exists? "main.o1")
-  (load "main.o1"))
- ((file-exists? "main.scm")
-  (load "main.scm"))
- (else
-  (printf (string-append "main.scm/main.o1 :: not found in " (current-directory) "\n"))))
+;; (cond
+;;  ((file-exists? "loader.o1")
+;;   (load "linkfile_flat_.o1"))
+;;  ((file-exists? "main.scm")
+;;   (load "main.scm"))
+;;  (else
+;;   (printf (string-append "requested module :: not found in " (current-directory) "\n"))))
