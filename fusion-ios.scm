@@ -34,7 +34,7 @@
 (define ios-device-sdk-directory
   (make-parameter
    (let* ((sdk-dir-process
-           (open-process (list path: "tools/get_ios_sdk_dir" ;; XXX TODO: Move to Sphere Fusion
+           (open-process (list path: (string-append (%sphere-path 'fusion) "tools/get-ios-sdk-dir")
                                arguments: '("iPhoneOS"))))
           (result (read-line sdk-dir-process)))
      (unless (zero? (process-status sdk-dir-process))
@@ -45,7 +45,7 @@
 (define ios-simulator-sdk-directory
   (make-parameter
    (let* ((sdk-dir-process
-           (open-process (list path: "tools/get_ios_sdk_dir" ;; XXX TODO: Move to Sphere Fusion
+           (open-process (list path: (string-append (%sphere-path 'fusion) "tools/get-ios-sdk-dir")
                                arguments: '("iPhoneSimulator"))))
           (result (read-line sdk-dir-process)))
      (unless (zero? (process-status sdk-dir-process))
@@ -55,7 +55,7 @@
 
 
 ;;------------------------------------------------------------------------------
-;;!! Host programs
+;;!! Toolchain
 
 (define xcodebuild-path
   (make-parameter
@@ -70,9 +70,8 @@
        #f)))
 
 
-
-
-
+;;------------------------------------------------------------------------------
+;;!! iOS support procedures
 
 ;;! Check whether the project seems to be prepared for Android
 (define (fusion#ios-project-supported?)
@@ -85,6 +84,7 @@
   (when (null? (fileset dir: (ios-directory) test: (extension=? "xcodeproj")))
         (err "iOS Xcode project doesn't exist. Please run iOS setup task.")))
 
+;;! Default clean for iOS
 (define (fusion#ios-clean)
   (define (delete-if-exists dir)
     (when (file-exists? dir)
@@ -94,7 +94,7 @@
   (delete-if-exists (string-append (ios-source-directory) "libspheres.a"))
   (delete-if-exists (string-append (ios-directory) "build/")))
 
-
+;;! Generate incremental link file for iOS given a set of modules
 (define (fusion#ios-link-incremental link-file
                                      modules
                                      #!key
@@ -113,6 +113,7 @@
             (err "error generating Gambit incremental link file"))
     output-file))
 
+;;! Generate flat link file for iOS given a set of modules
 (define (fusion#ios-link-flat link-file
                               modules
                               #!key
@@ -133,7 +134,7 @@
             (err "error generating Gambit flat link file"))
     output-file))
 
-
+;;! Runs the compiler with the iOS environment
 (define (fusion#ios-run-compiler #!key
                                  arch
                                  platform-type
@@ -185,6 +186,7 @@
         (unless (zero? (process-status compilation-process))
                 (err "fusion#ios-run-compiler: error running command"))))))
 
+;;! Runs the linker with the iOS environment
 (define (fusion#ios-run-linker #!key
                                  arch
                                  platform-type
@@ -221,13 +223,13 @@
         (unless (zero? (process-status compilation-process))
                 (err "fusion#ios-run-linker: error running command"))))))
 
-
+;;! Create an archive (static library) for iOS given a set of object files
 (define (fusion#ios-create-library-archive lib-name o-files #!key (verbose #f))
   (shell-command (string-append "ar r" (if verbose "cv " " ") lib-name " " (string-join o-files))))
 
 ;;! Compile App
 ;; .parameter main-module main-module of the Android App
-;; .parameter import-modules modules already generated to be linked as well
+;; .parameter arch: target architecture
 (define (fusion#ios-compile-app main-module
                                 #!key
                                 arch
@@ -237,7 +239,7 @@
                                 (compiled-modules '())
                                 (target 'debug)
                                 (verbose #f))
-  ;; Defines
+  ;; Cond-expand features (relevant within the Sake environment)
   (##cond-expand-features (append '(mobile ios) (##cond-expand-features)))
   ;; Checks
   (fusion#ios-project-supported?)
@@ -277,8 +279,8 @@
                                       output: output-c-file)))))
          modules-to-compile)
         (when something-generated?
-            (info/color 'blue "new C files generated")
-            (fusion#ios-link-incremental link-file all-modules version: version))
+              (info/color 'blue "new C files generated")
+              (fusion#ios-link-incremental link-file all-modules version: version))
         (set! something-generated? #f)
         (info/color 'green "compiling C/Scheme code into a static lib")
         (let ((o-files
@@ -323,6 +325,7 @@
                      (case platform-type ((device) "iphoneos") ((simulator) "iphonesimulator"))
                      " -arch " (symbol->string arch))))))
 
+;;! Generate a loadable object from a module and its dependencies for iOS
 (define (fusion#ios-compile-loadable-set output-file
                                          main-module
                                          #!key
@@ -374,8 +377,8 @@
                                       output: output-c-file)))))
          modules-to-compile)
         (when something-generated?
-            (info/color 'blue "new C files generated")
-            (fusion#ios-link-flat link-file all-modules version: version))
+              (info/color 'blue "new C files generated")
+              (fusion#ios-link-flat link-file all-modules version: version))
         ;; Compile objects
         (set! something-generated? #f)
         (let ((o-files

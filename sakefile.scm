@@ -101,8 +101,6 @@
                                          arch: 'armv7s
                                          cond-expand-features: '(debug)
                                          compiler-options: '(debug))
-        #;
-        (fusion#make-ios-fat-lib ...)
         ;; Compile the iOS app with just the loader module
         ;; The loader will decide which object to load according to the runtime architecture
         (fusion#ios-compile-app 'loader
@@ -149,6 +147,7 @@
                                  compiler-options: '(debug))
         ;; Compile the main module and its dependencies as a loadable object. The (load)
         ;; function takes care of loading code dinamically, both compiled and source code.
+        #;
         (fusion#compile-loadable-set "main" 'main
                                      merge-modules: #f
                                      s                                     target: 'debug
