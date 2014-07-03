@@ -15,6 +15,8 @@
 		38032199195F2343002B40D9 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 38032193195F2343002B40D9 /* main.c */; };
 		3803219A195F2343002B40D9 /* UIDevice+Hardware.m in Sources */ = {isa = PBXBuildFile; fileRef = 38032195195F2343002B40D9 /* UIDevice+Hardware.m */; };
 		3815AEC81964CB9200D24481 /* libspheres.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3815AEC71964CB9200D24481 /* libspheres.a */; };
+		385E5B24196603460021B9C4 /* main.scm in Resources */ = {isa = PBXBuildFile; fileRef = 385E5B23196603460021B9C4 /* main.scm */; };
+		385E5B26196603DB0021B9C4 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 385E5B25196603DB0021B9C4 /* Default-568h@2x.png */; };
 		386EF8581965C9A800875F09 /* main.o1 in Resources */ = {isa = PBXBuildFile; fileRef = 386EF8571965C9A800875F09 /* main.o1 */; };
 		38A7C10A1959994F00FD6D80 /* doxyfile in Resources */ = {isa = PBXBuildFile; fileRef = 38A7C0BC1959994F00FD6D80 /* doxyfile */; };
 		38A7C10B1959994F00FD6D80 /* SDL_config.h.cmake in Resources */ = {isa = PBXBuildFile; fileRef = 38A7C0C51959994F00FD6D80 /* SDL_config.h.cmake */; };
@@ -40,6 +42,8 @@
 		38032194195F2343002B40D9 /* UIDevice+Hardware.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "UIDevice+Hardware.h"; path = "src/UIDevice+Hardware.h"; sourceTree = "<group>"; };
 		38032195195F2343002B40D9 /* UIDevice+Hardware.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "UIDevice+Hardware.m"; path = "src/UIDevice+Hardware.m"; sourceTree = "<group>"; };
 		3815AEC71964CB9200D24481 /* libspheres.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libspheres.a; path = src/libspheres.a; sourceTree = "<group>"; };
+		385E5B23196603460021B9C4 /* main.scm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = main.scm; sourceTree = "<group>"; };
+		385E5B25196603DB0021B9C4 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
 		386EF8571965C9A800875F09 /* main.o1 */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = main.o1; sourceTree = "<group>"; };
 		38A7C0BA1959994F00FD6D80 /* begin_code.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = begin_code.h; sourceTree = "<group>"; };
 		38A7C0BB1959994F00FD6D80 /* close_code.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = close_code.h; sourceTree = "<group>"; };
@@ -184,7 +188,9 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				385E5B23196603460021B9C4 /* main.scm */,
 				386EF8571965C9A800875F09 /* main.o1 */,
+				385E5B25196603DB0021B9C4 /* Default-568h@2x.png */,
 				FD77A07E0E26BDA900F39101 /* Default.png */,
 				FD77A07C0E26BD8C00F39101 /* Icon.png */,
 				8D1107310486CEB800E47090 /* Info.plist */,
@@ -391,6 +397,8 @@
 				FD77A07F0E26BDA900F39101 /* Default.png in Resources */,
 				38A7C10A1959994F00FD6D80 /* doxyfile in Resources */,
 				38A7C10B1959994F00FD6D80 /* SDL_config.h.cmake in Resources */,
+				385E5B26196603DB0021B9C4 /* Default-568h@2x.png in Resources */,
+				385E5B24196603460021B9C4 /* main.scm in Resources */,
 				38A7C10C1959994F00FD6D80 /* SDL_config.h.in in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -422,6 +430,7 @@
 				GCC_WARN_UNUSED_VALUE = NO;
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/SDL/lib",
@@ -441,6 +450,7 @@
 					"-all_load",
 				);
 				PRODUCT_NAME = SchemeSpheres;
+				PROVISIONING_PROFILE = "EE80BD9D-02C0-4C32-8E50-925367643FE4";
 			};
 			name = Debug;
 		};
@@ -454,6 +464,7 @@
 				GCC_WARN_UNUSED_VALUE = NO;
 				GCC_WARN_UNUSED_VARIABLE = NO;
 				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/SDL/lib",
@@ -473,6 +484,7 @@
 					"-all_load",
 				);
 				PRODUCT_NAME = SchemeSpheres;
+				PROVISIONING_PROFILE = "EE80BD9D-02C0-4C32-8E50-925367643FE4";
 			};
 			name = Release;
 		};

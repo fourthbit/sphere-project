@@ -73,7 +73,7 @@
                               cond-expand-features: '(ios debug)
                               compiler-options: '(debug)
                               verbose: #t)
-      (begin
+      (let ((arch 'armv7s)) ;; armv7 / armv7s
         ;; Compile the main module and its dependencies as a loadable object, for all iOS
         ;; archs. The (load) function takes care of loading code dinamically, both compiled
         ;; and source code. This can be used during iOS development in the following ways:
@@ -83,28 +83,14 @@
         (fusion#ios-compile-loadable-set "main.o1" 'main
                                          merge-modules: #f
                                          target: 'debug
-                                         arch: 'i386
+                                         arch: arch
                                          cond-expand-features: '(ios debug)
                                          compiler-options: '(debug)
                                          verbose: #t)
-        #;
-        (fusion#ios-compile-loadable-set "main_arm7" 'main
-                                         merge-modules: #f
-                                         target: 'debug
-                                         arch: 'armv7
-                                         cond-expand-features: '(debug)
-                                         compiler-options: '(debug))
-        #;
-        (fusion#ios-compile-loadable-set "main_arm7s" 'main
-                                         merge-modules: #f
-                                         target: 'debug
-                                         arch: 'armv7s
-                                         cond-expand-features: '(debug)
-                                         compiler-options: '(debug))
         ;; Compile the iOS app with just the loader module
         ;; The loader will decide which object to load according to the runtime architecture
         (fusion#ios-compile-app 'loader
-                                arch: 'i386 ;; armv7 / armv7s
+                                arch: arch
                                 target: 'debug
                                 cond-expand-features: '(ios debug)
                                 compiler-options: '(debug)
