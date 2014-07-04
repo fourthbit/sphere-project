@@ -15,7 +15,8 @@
       (fusion#android-compile-app "main" 'main
                                   target: 'debug
                                   cond-expand-features: '(debug)
-                                  compiler-options: '(debug))
+                                  compiler-options: '(debug)
+                                  num-threads: +inf.0)
       (begin
         ;; Compile the main module and its dependencies as a loadable object for the ARM
         ;; arch.  The (load) function takes care of loading code dinamically, both compiled
