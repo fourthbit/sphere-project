@@ -1,7 +1,3 @@
-(##include "fusion-ios.scm")
-
-
-
 ;;----------------------------------------------------------------------------------------
 ;;!! Android tasks
 
@@ -122,7 +118,7 @@
 (define-task host:compile ()
   ;; Note (merge-modules): If #t this will include all dependencies in one big file before compiling to C
   ;; Note (compile-loadable-set): this must be linked flat
-  (if #t ;; #t to compile the application as a single standalone
+  (if #f ;; #t to compile the application as a single standalone
       ;; Bundle as a single executable
       (fusion#host-compile-exe "my-application-standalone" 'main
                                merge-modules: #f)
