@@ -95,6 +95,8 @@
   (delete-if-exists (string-append (ios-directory) "build/")))
 
 ;;! Generate incremental link file for iOS given a set of modules
+
+;;; XXX TODO  GENERALIZE
 (define (fusion#ios-link-incremental link-file
                                      modules
                                      #!key
@@ -114,6 +116,8 @@
     output-file))
 
 ;;! Generate flat link file for iOS given a set of modules
+
+;;; XXX TODO  GENERALIZE
 (define (fusion#ios-link-flat link-file
                               modules
                               #!key
@@ -152,18 +156,24 @@
     (unless (or (eq? compiler 'gcc) (eq? compiler 'g++))
             (err "fusion#compile-ios-app: wrong compiler"))
     ;; Construct compiler strings
+    ;; XXX TODO: this should be done in the proper string list format, so no split is nacessary later on
     (let* ((ios-cc-cli (string-append
                         "-sdk " sdk-name
                         " gcc"
                         " -isysroot " ios-sdk-directory
                         " -arch " arch-str
-                        " -miphoneos-version-min=5.0"))
+                        " -miphoneos-version-min=7.1"
+                        ;; XXX TODO: These should come externally, and be handled according to platform
+                        " -fmessage-length=105 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit=0 -fcolor-diagnostics -std=c99 -Wno-trigraphs -fpascal-strings -O0 -Wno-trigraphs -Wreturn-type"
+                        ;; For armv7s
+                        ;; /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x objective-c -arch armv7s -fmessage-length=105 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit=0 -fcolor-diagnostics -std=c99 -Wno-trigraphs -fpascal-strings -O0 -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-implicit-atomic-properties -Wno-receiver-is-weak -Wno-arc-repeated-use-of-weak -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wno-unused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-shorten-64-to-32 -Wpointer-sign -Wno-newline-eof -Wno-selector -Wno-strict-selector-match -Wno-undeclared-selector -Wno-deprecated-implementations -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS7.1.sdk -fstrict-aliasing -Wprotocol -Wdeprecated-declarations -g -fvisibility=hidden -Wno-sign-conversion -miphoneos-version-min=7.1 -iquote /Users/Alvaro/Dropbox/working/DaTest/ios/build/SchemeSpheres.build/Debug-iphoneos/SchemeSpheres.build/SchemeSpheres-generated-files.hmap -I/Users/Alvaro/Dropbox/working/DaTest/ios/build/SchemeSpheres.build/Debug-iphoneos/SchemeSpheres.build/SchemeSpheres-own-target-headers.hmap -I/Users/Alvaro/Dropbox/working/DaTest/ios/build/SchemeSpheres.build/Debug-iphoneos/SchemeSpheres.build/SchemeSpheres-all-target-headers.hmap -iquote /Users/Alvaro/Dropbox/working/DaTest/ios/build/SchemeSpheres.build/Debug-iphoneos/SchemeSpheres.build/SchemeSpheres-project-headers.hmap -I/Users/Alvaro/Dropbox/working/DaTest/ios/build/Debug-iphoneos/include -I/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -I/Users/Alvaro/Dropbox/working/DaTest/ios/build/SchemeSpheres.build/Debug-iphoneos/SchemeSpheres.build/DerivedSources/armv7s -I/Users/Alvaro/Dropbox/working/DaTest/ios/build/SchemeSpheres.build/Debug-iphoneos/SchemeSpheres.build/DerivedSources -F/Users/Alvaro/Dropbox/working/DaTest/ios/build/Debug-iphoneos -x objective-c -D___LIBRARY -v -D___LIBRARY -MMD -MT dependencies -MF /Users/Alvaro/Dropbox/working/DaTest/ios/build/SchemeSpheres.build/Debug-iphoneos/SchemeSpheres.build/Objects-normal/armv7s/UIDevice+Hardware.d --serialize-diagnostics /Users/Alvaro/Dropbox/working/DaTest/ios/build/SchemeSpheres.build/Debug-iphoneos/SchemeSpheres.build/Objects-normal/armv7s/UIDevice+Hardware.dia -c /Users/Alvaro/Dropbox/working/DaTest/ios/src/UIDevice+Hardware.m -o /Users/Alvaro/Dropbox/working/DaTest/ios/build/SchemeSpheres.build/Debug-iphoneos/SchemeSpheres.build/Objects-normal/armv7s/UIDevice+Hardware.o
+                        ))
            (ios-cxx-cli (string-append
                          "-sdk " sdk-name
                          " g++"
                          " -isysroot " ios-sdk-directory
                          " -arch " arch-str
-                         " -miphoneos-version-min=5.0"))
+                         " -miphoneos-version-min=7.1"))
            (selected-compiler-cli (case compiler ((gcc) ios-cc-cli) ((g++) ios-cxx-cli))))
       (when verbose
             (info/color 'green "Compiler command:")
@@ -182,7 +192,8 @@
                           (string-append "CFLAGS=\"-Wno-trigraphs -Wreturn-type -Wunused-variable\"")
                           "CXXFLAGS=\"-Wno-trigraphs -Wreturn-type -Wunused-variable\""
                           (string-append "LD=\"ld -arch " arch-str "\"")
-                          "LDFLAGS=\"\"")))))
+                          "LDFLAGS=\"\""
+                          "IPHONEOS_DEPLOYMENT_TARGET=7.1"))))) ;; XXX TODO
         (unless (zero? (process-status compilation-process))
                 (err "fusion#ios-run-compiler: error running command"))))))
 
@@ -207,9 +218,9 @@
                        " -syslibroot " ios-sdk-directory
                        " -arch " arch-str)))
       (when verbose
-            (info/color 'green "Compiler command:")
+            (info/color 'green "Linker command:")
             (println ios-ld-cli)
-            (info/color 'green "Compiler args:")
+            (info/color 'green "Linker args:")
             (println (string-join arguments)))
       (let ((compilation-process
              (open-process
@@ -288,8 +299,8 @@
                       (let ((output-o-file (string-append (path-strip-extension f) ".o")))
                         (when ((newer-than? output-o-file) f)
                               (unless something-generated?
-                                      (info/color 'blue "compiling updated C files:")
-                                      (info/color 'purple (string-append " >>>  " f)))
+                                      (info/color 'blue "compiling updated C files:"))
+                              (info/color 'browns (string-append " >>>  " f))
                               (set! something-generated? #t)
                               (fusion#ios-run-compiler
                                arch: arch
@@ -330,12 +341,12 @@
                                          main-module
                                          #!key
                                          arch
-                                         (cond-expand-features '())
-                                         (compiler-options '())
-                                         (version compiler-options)
-                                         (compiled-modules '())
                                          (target 'debug)
                                          (merge-modules #f)
+                                         (cond-expand-features '())
+                                         (compiler-options '())
+                                         (version compiler-options) ;; XXX TODO: this alright?
+                                         (compiled-modules '())
                                          (verbose #f))
   ;; Cond-expand features (relevant within the Sake environment)
   (##cond-expand-features (append '(mobile ios) (##cond-expand-features)))
@@ -344,6 +355,8 @@
   (unless arch (err "fusion#ios-compile-loadable-set: arch argument is mandatory"))
   (unless (or (eq? arch 'i386) (eq? arch 'armv7) (eq? arch 'armv7s))
           (err "fusion#ios-compile-loadable-set: wrong arch argument"))
+  (when merge-modules
+        (err "fusion#host-compile-exe: merge-modules options is not yet implemented"))
   ;; Compute dependencies
   (let* ((modules-to-compile (append (%module-deep-dependencies-to-load main-module) (list main-module)))
          (all-modules (append compiled-modules modules-to-compile))
@@ -402,8 +415,8 @@
                                      ,output-o-file)))
                         (when ((newer-than? output-o-file) f)
                               (unless something-generated?
-                                      (info/color 'blue "compiling updated C files:")
-                                      (info/color 'purple (string-append " >>>  " f)))
+                                      (info/color 'blue "compiling updated C files:"))
+                              (info/color 'brown (string-append " >>>  " f))
                               (set! something-generated? #t)
                               (fusion#ios-run-compiler
                                arch: arch
@@ -423,19 +436,26 @@
            arguments: `( ;; TODO XXX         MOVE ESSENTIAL TO PROCEDURE
                         "-bundle"
                         "-demangle"
-                        "-dynamic"
+                        ;;"-dynamic"
                         "-ObjC"
                         "-all_load"
                         "-dead_strip"
-                        "-ios_simulator_version_min" "5.0"
+                        ;;"-ios_simulator_version_min" "7.1.0" ;; XXXX TODO
+                        "-iphoneos_version_min" "7.1.0"
+
                         "-objc_abi_version" "2"
-                        "-no_implicit_dylibs"
+                        ;;"-no_implicit_dylibs"
                         "-framework" "Foundation"
                         "-framework" "UIKit"
                         "-lobjc"
                         "-lSystem"
                         ;;"-Lios/gambit/lib"
                         ;;"-lgambc"
+
+                        ;; For device
+                        ;; /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -demangle -dynamic -arch armv7s -all_load -dead_strip -iphoneos_version_min 7.1.0 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS7.1.sdk -ObjC -o /Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Products/Debug-iphoneos/SchemeSpheres.app/SchemeSpheres -L/Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Products/Debug-iphoneos -L/Users/Alvaro/Dropbox/working/DaTest/ios/SDL/lib -L/Users/Alvaro/Dropbox/working/DaTest/ios/gambit -L/Users/Alvaro/Dropbox/working/DaTest/ios/gambit/lib -L/Users/Alvaro/Dropbox/working/DaTest/ios/src -filelist /Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Intermediates/SchemeSpheres.build/Debug-iphoneos/SchemeSpheres.build/Objects-normal/armv7s/SchemeSpheres.LinkFileList -framework Foundation -framework UIKit -framework OpenGLES -framework QuartzCore -framework CoreAudio -framework AudioToolbox -framework CoreGraphics -lSDL2 -lspheres -lgambc -dependency_info /Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Intermediates/SchemeSpheres.build/Debug-iphoneos/SchemeSpheres.build/Objects-normal/armv7s/SchemeSpheres_dependency_info.dat -framework Foundation -lobjc -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/5.1/lib/darwin/libclang_rt.ios.a -F/Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Products/Debug-iphoneos
+                        
+                        ;; For simulator
                         ;;"-demangle -dynamic -arch i386 -all_load -dead_strip -ios_simulator_version_min 7.1.0 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator7.1.sdk -ObjC -o /Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Products/Debug-iphonesimulator/SchemeSpheres.app/SchemeSpheres -lcrt1.o -L/Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Products/Debug-iphonesimulator -L/Users/Alvaro/Dropbox/working/DaTest/ios/SDL/lib -L/Users/Alvaro/Dropbox/working/DaTest/ios/gambit -L/Users/Alvaro/Dropbox/working/DaTest/ios/gambit/lib -L/Users/Alvaro/Dropbox/working/DaTest/ios/src -filelist /Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Intermediates/SchemeSpheres.build/Debug-iphonesimulator/SchemeSpheres.build/Objects-normal/i386/SchemeSpheres.LinkFileList -objc_abi_version 2 -no_implicit_dylibs -framework Foundation -framework UIKit -framework OpenGLES -framework QuartzCore -framework CoreAudio -framework AudioToolbox -framework CoreGraphics -lSDL2 -lgambc -dependency_info /Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Intermediates/SchemeSpheres.build/Debug-iphonesimulator/SchemeSpheres.build/Objects-normal/i386/SchemeSpheres_dependency_info.dat -framework Foundation -lobjc -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/5.1/lib/darwin/libclang_rt.ios.a -F/Users/Alvaro/Library/Developer/Xcode/DerivedData/SchemeSpheres-cplbjdvmioedvvdtudhkdgprgyrw/Build/Products/Debug-iphonesimulator"
                         ,@o-files
                         "-o"

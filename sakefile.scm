@@ -14,7 +14,7 @@
             (create-symbolic-link (string-append (%sphere-path 'sdl2) "deps/SDL2-2.0.3") SDL-link))))
 
 (define-task android:compile ()
-  (if #f ;; #t to compile as a single app executable
+  (if #t ;; #t to compile as a single app executable
       ;; Compile all modules within the app executable
       (fusion#android-compile-app "main" 'main
                                   target: 'debug
@@ -24,15 +24,15 @@
         ;; Compile the main module and its dependencies as a loadable object for the ARM
         ;; arch.  The (load) function takes care of loading code dinamically, both compiled
         ;; and source code. This can be used during Android development in the following ways:
-        ;; - Uploading the code to the SD card
         ;; - Bundling the code within the APK
+        ;; - Uploading the code to the SD card
         ;; - Dynamically running with the Remote Debugger in Emacs or the terminal
-        (fusion#compile-loadable-set "main_arm.o1" 'main
-                                     merge-modules: #f
-                                     target: 'debug
-                                     arch: 'android-arm
-                                     cond-expand-features: '(debug)
-                                     compiler-options: '(debug))
+        (fusion#android-compile-loadable-set "main.o1" 'main
+                                             merge-modules: #f
+                                             target: 'debug
+                                             arch: 'android-arm
+                                             cond-expand-features: '(debug)
+                                             compiler-options: '(debug))
         ;; Compile the Android app with just the loader code
         (fusion#android-compile-app "my-app" 'loader
                                     target: 'debug
@@ -73,13 +73,14 @@
                               cond-expand-features: '(ios debug)
                               compiler-options: '(debug)
                               verbose: #t)
-      (let ((arch 'armv7s)) ;; armv7 / armv7s
+      (let ((arch 'i386)) ;; armv7 / armv7s
         ;; Compile the main module and its dependencies as a loadable object, for all iOS
         ;; archs. The (load) function takes care of loading code dinamically, both compiled
         ;; and source code. This can be used during iOS development in the following ways:
         ;; - Uploading code to the Resources folder (part of the app bundle)
-        ;; - Uploading code to the Documents folder (created at runtime, must be uploaded when the app is running)
+        ;; - Uploading code to the Documents folder (created at runtime, read/write when the app is running)
         ;; - Dynamically running with the Remote Debugger in Emacs or the terminal
+        ;; Finally, take into account that loadable libraries do work only on the simulator
         (fusion#ios-compile-loadable-set "main.o1" 'main
                                          merge-modules: #f
                                          target: 'debug
@@ -121,25 +122,22 @@
 (define-task host:compile ()
   ;; Note (merge-modules): If #t this will include all dependencies in one big file before compiling to C
   ;; Note (compile-loadable-set): this must be linked flat
-  (if #f ;; #t to compile the application as a single standalone
-      ;; Bundle a single executable
+  (if #t ;; #t to compile the application as a single standalone
+      ;; Bundle as a single executable
       (fusion#host-compile-exe "my-application-standalone" 'main
                                merge-modules: #f)
       (begin 
         ;; Compile as a loader and a loadable library
         (fusion#host-compile-exe "my-application" 'loader
-                                 target: 'debug
                                  cond-expand-features: '(host debug)
                                  compiler-options: '(debug))
         ;; Compile the main module and its dependencies as a loadable object. The (load)
         ;; function takes care of loading code dinamically, both compiled and source code.
-        #;
-        (fusion#compile-loadable-set "main" 'main
-                                     merge-modules: #f
-                                     s                                     target: 'debug
-                                     arch: 'host
-                                     cond-expand-features: '(debug)
-                                     compiler-options: '(debug)))))
+        (fusion#host-compile-loadable-set "main.o1" 'main
+                                          merge-modules: #f
+                                          cond-expand-features: '(debug)
+                                          compiler-options: '(debug)
+                                          verbose: #t))))
 
 (define-task host:clean ()
   (sake#default-clean))

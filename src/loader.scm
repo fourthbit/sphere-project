@@ -40,5 +40,4 @@ end-c-lambda
   #!void))
 
 ;; Load main module dynamically
-(load "main.scm")
-(println "Was successful")
+(load "main.o1")
