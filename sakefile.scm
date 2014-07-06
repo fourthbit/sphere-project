@@ -73,12 +73,10 @@
                               target: 'debug
                               cond-expand-features: '(debug)
                               compiler-options: '(debug)
-                              cc-options: ('"-D___SINGLE_HOST"
-                                           "-miphoneos-version-min=7.1"
-                                           "-O1"
-                                           ;;"-fdiagnostics-show-note-include-stack"
-                                           ;;"-fmacro-backtrace-limit=0"
-                                           "-fcolor-diagnostics")                                            
+                              cc-options: '("-D___SINGLE_HOST"
+                                            "-O1"
+                                            "-fdiagnostics-show-note-include-stack"
+                                            "-fcolor-diagnostics")                                            
                               verbose: #t)
       (let ((arch 'i386)) ;; armv7 / armv7s
         ;; Compile the main module and its dependencies as a loadable object, for all iOS
@@ -94,6 +92,7 @@
                                          arch: arch
                                          cond-expand-features: '(ios debug)
                                          compiler-options: '(debug)
+                                         cc-options: (list "-w" (string-append "-I" (ios-directory) "SDL/include"))
                                          verbose: #t)
         ;; Compile the iOS app with just the loader module
         ;; The loader will decide which object to load according to the runtime architecture
