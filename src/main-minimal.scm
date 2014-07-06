@@ -4,3 +4,4 @@
 
 (SDL_Log "Hello world!")
 (println "Hello REPL!")
+(thread-sleep! 10)

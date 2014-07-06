@@ -71,8 +71,14 @@
       (fusion#ios-compile-app 'main
                               arch: 'i386 ;; armv7 / armv7s
                               target: 'debug
-                              cond-expand-features: '(ios debug)
+                              cond-expand-features: '(debug)
                               compiler-options: '(debug)
+                              cc-options: ('"-D___SINGLE_HOST"
+                                           "-miphoneos-version-min=7.1"
+                                           "-O1"
+                                           ;;"-fdiagnostics-show-note-include-stack"
+                                           ;;"-fmacro-backtrace-limit=0"
+                                           "-fcolor-diagnostics")                                            
                               verbose: #t)
       (let ((arch 'i386)) ;; armv7 / armv7s
         ;; Compile the main module and its dependencies as a loadable object, for all iOS
