@@ -22,7 +22,7 @@
         ;; Compile the Android app with just the loader code
         (fusion#android-compile-app "my-app" 'loader
                                     target: 'debug
-                                    cond-expand-features: '(android debug)
+                                    cond-expand-features: '(debug)
                                     compiler-options: '(debug)
                                     verbose: #t)
         ;; Compile the main module and its dependencies as a loadable object for the ARM
