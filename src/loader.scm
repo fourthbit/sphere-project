@@ -39,5 +39,12 @@ end-c-lambda
  (else
   #!void))
 
+(SDL_Log (current-directory))
+(SDL_Log (object->string (directory-files)))
 ;; Load main module dynamically
-(load "main.o1")
+
+(parameterize
+ ((current-directory (cond-expand (android "sdcard") (else "."))))
+ (SDL_Log (if (file-exists? "main-minimal.o1") "FILE FOUND" "FILE **NOT** FOUND"))
+ (load "main-minimal.o1"))
+(SDL_Log "SUCESS")

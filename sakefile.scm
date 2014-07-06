@@ -3,38 +3,42 @@
 
 (define-task android:setup ()
   ;; Set up Android project files
-  (fusion#android-project-set-target "android-15")
+  (fusion#android-project-setup 'android-15)
   ;; Create symlink to SDL library from SDL2 Sphere
   (let ((SDL-link (string-append (android-jni-generator-directory) "deps/SDL")))
     (unless (file-exists? SDL-link)
             (create-symbolic-link (string-append (%sphere-path 'sdl2) "deps/SDL2-2.0.3") SDL-link))))
 
 (define-task android:compile ()
-  (if #t ;; #t to compile as a single app executable
+  (if #f ;; #t to compile as a single app executable
       ;; Compile all modules within the app executable
       (fusion#android-compile-app "main" 'main
                                   target: 'debug
                                   cond-expand-features: '(debug)
                                   compiler-options: '(debug)
-                                  num-threads: +inf.0)
+                                  num-threads: +inf.0
+                                  verbose: #t)
       (begin
+        ;; Compile the Android app with just the loader code
+        (fusion#android-compile-app "my-app" 'loader
+                                    target: 'debug
+                                    cond-expand-features: '(android debug)
+                                    compiler-options: '(debug)
+                                    verbose: #t)
         ;; Compile the main module and its dependencies as a loadable object for the ARM
         ;; arch.  The (load) function takes care of loading code dinamically, both compiled
         ;; and source code. This can be used during Android development in the following ways:
         ;; - Bundling the code within the APK
         ;; - Uploading the code to the SD card
         ;; - Dynamically running with the Remote Debugger in Emacs or the terminal
-        (fusion#android-compile-loadable-set "main.o1" 'main
+        (fusion#android-compile-loadable-set "main-minimal.o1" 'main-minimal
                                              merge-modules: #f
                                              target: 'debug
-                                             arch: 'android-arm
                                              cond-expand-features: '(debug)
-                                             compiler-options: '(debug))
-        ;; Compile the Android app with just the loader code
-        (fusion#android-compile-app "my-app" 'loader
-                                    target: 'debug
-                                    cond-expand-features: '(ios debug)
-                                    compiler-options: '(debug)))))
+                                             compiler-options: '(debug)
+                                             cc-options: `(,(string-append "-I" (android-jni-directory) "deps/SDL/include") "-w")
+                                             ld-options: '("-lEGL" "-lGLESv2")
+                                             verbose: #t))))
 
 (define-task android:install ()
   (fusion#android-install 'debug))
