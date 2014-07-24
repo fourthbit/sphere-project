@@ -57,8 +57,12 @@ void ___run_gambit()
 }
 
 /// XXX
-#include "png_image.h"
+//#include "png_image.h"
+#include <OpenGLES/ES2/gl.h>
+#include <OpenGLES/ES2/glext.h>
+
 #include "SDL.h"
+#include "SDL_image.h"
 
 #include <assert.h>
 
@@ -71,51 +75,6 @@ void ___run_gambit()
 //                    const GLenum type, const GLvoid* pixels);
 
 
-GLuint load_texture(const GLsizei width, const GLsizei height,
-                    const GLenum type, const GLvoid* pixels)
-{
-    GLuint texture_object_id;
-    glGenTextures(1, &texture_object_id);
-    assert(texture_object_id != 0);
-    
-    glBindTexture(GL_TEXTURE_2D, texture_object_id);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, type, width, height, 0, type, GL_UNSIGNED_BYTE, pixels);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    
-    glBindTexture(GL_TEXTURE_2D, 0);
-    return texture_object_id;
-}
-
-
-GLuint load_png_asset_into_texture(const char* relative_path) {
-    assert(relative_path != NULL);
-    
-    SDL_RWops *png_file = SDL_RWFromFile(relative_path, "rb");
-    if(png_file != NULL) {
-        // Read PNG data
-        size_t png_file_size = png_file->size(png_file);
-        //printf("And the size is... %zu\n", png_file_size);
-        unsigned char* png_data = malloc(png_file_size);
-        SDL_RWread(png_file, png_data, png_file_size, 1);
-        SDL_RWclose(png_file);
-        // Convert PNG to raw
-        const raw_image_data_t raw_image_data = get_raw_image_data_from_png(png_data, png_file_size);
-        
-        const GLuint texture_object_id = load_texture(raw_image_data.width, raw_image_data.height,
-                                                      raw_image_data.gl_color_format, raw_image_data.data);
-        // Free data
-        free(png_data);
-        release_raw_image_data( &raw_image_data );
-        printf("successful loading\n");
-        return texture_object_id;
-    } else {
-        printf("error loading file\n");
-        return 0;
-    }
-}
 
 #define LOGGING_ON 1
 #define DEBUG_INFO printf
@@ -282,21 +241,64 @@ GLuint create_vbo(const GLsizeiptr size, const GLvoid* data, const GLenum usage)
 }
 
 
-static GLuint texture;
-static GLuint buffer;
-static GLuint program;
 
-static GLint a_position_location;
-static GLint a_texture_coordinates_location;
-static GLint u_texture_unit_location;
 
-// position X, Y, texture S, T
-static const float rect[] = {-1.0f, -1.0f, 0.0f, 0.0f,
-    -1.0f,  1.0f, 0.0f, 1.0f,
-    1.0f, -1.0f, 1.0f, 0.0f,
-    1.0f,  1.0f, 1.0f, 1.0f};
 
-#define BUFFER_OFFSET(i) ((char *)NULL + (i))
+//////////////////////////
+
+/*
+
+GLuint load_texture(const GLsizei width, const GLsizei height,
+                    const GLenum type, const GLvoid* pixels)
+{
+    GLuint texture_object_id;
+    glGenTextures(1, &texture_object_id);
+    assert(texture_object_id != 0);
+    
+    glBindTexture(GL_TEXTURE_2D, texture_object_id);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, type, width, height, 0, type, GL_UNSIGNED_BYTE, pixels);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return texture_object_id;
+}
+
+
+GLuint load_png_asset_into_texture(const char* relative_path) {
+    assert(relative_path != NULL);
+    
+    SDL_RWops *png_file = SDL_RWFromFile(relative_path, "rb");
+    if(png_file != NULL) {
+        // Read PNG data
+        size_t png_file_size = png_file->size(png_file);
+        //printf("And the size is... %zu\n", png_file_size);
+        unsigned char* png_data = malloc(png_file_size);
+        SDL_RWread(png_file, png_data, png_file_size, 1);
+        SDL_RWclose(png_file);
+        // Convert PNG to raw
+        const raw_image_data_t raw_image_data = get_raw_image_data_from_png(png_data, png_file_size);
+        
+        const GLuint texture_object_id = load_texture(raw_image_data.width, raw_image_data.height,
+                                                      raw_image_data.gl_color_format, raw_image_data.data);
+        // Free data
+        free(png_data);
+        release_raw_image_data( &raw_image_data );
+        printf("successful loading\n");
+        return texture_object_id;
+    } else {
+        printf("error loading file\n");
+        return 0;
+    }
+}
+*/
+
+
+//////////////////////////
+
+
 
 
 int HandleAppEvents(void *userdata, SDL_Event *event)
@@ -304,39 +306,18 @@ int HandleAppEvents(void *userdata, SDL_Event *event)
     switch (event->type)
     {
         case SDL_APP_TERMINATING:
-            /* Terminate the app.
-             Shut everything down before returning from this function.
-             */
             return 0;
         case SDL_APP_LOWMEMORY:
-            /* You will get this when your app is paused and iOS wants more memory.
-             Release as much memory as possible.
-             */
             return 0;
         case SDL_APP_WILLENTERBACKGROUND:
-            /* Prepare your app to go into the background.  Stop loops, etc.
-             This gets called when the user hits the home button, or gets a call.
-             */
             return 0;
         case SDL_APP_DIDENTERBACKGROUND:
-            /* This will get called if the user accepted whatever sent your app to the background.
-             If the user got a phone call and canceled it, you'll instead get an SDL_APP_DIDENTERFOREGROUND event and restart your loops.
-             When you get this, you have 5 seconds to save all your state or the app will be terminated.
-             Your app is NOT active at this point.
-             */
             return 0;
         case SDL_APP_WILLENTERFOREGROUND:
-            /* This call happens when your app is coming back to the foreground.
-             Restore all your state here.
-             */
             return 0;
         case SDL_APP_DIDENTERFOREGROUND:
-            /* Restart your loops here.
-             Your app is interactive and getting CPU again.
-             */
             return 0;
         default:
-            /* No special processing, add it to the event queue */
             return 1;
     }
 }
@@ -353,34 +334,62 @@ randomFloat(float min, float max)
     return rand() / (float) RAND_MAX *(max - min) + min;
 }
 
-void
-render(SDL_Renderer *renderer)
-{
+
+#define BUFFER_OFFSET(i) ((char *)NULL + (i))
+
+
+static GLuint texture;
+static GLuint buffer;
+static GLuint program;
+
+static GLint a_position_location;
+static GLint a_texture_coordinates_location;
+static GLint u_texture_unit_location;
+
+
+void render(void* params) {
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) {
+            //done = 1;
+        }
+    }
+    glClearColor(randomFloat(0.0, 1.0), 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    Uint8 r, g, b;
-    /*  Come up with a random rectangle */
-    SDL_Rect rect;
-    rect.w = randomInt(64, 128);
-    rect.h = randomInt(64, 128);
-    rect.x = randomInt(0, 500);
-    rect.y = randomInt(0, 500);
+    ///
+    /*
+    glUseProgram(program);
     
-    /* Come up with a random color */
-    r = randomInt(50, 255);
-    g = randomInt(50, 255);
-    b = randomInt(50, 255);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glUniform1i(u_texture_unit_location, 0);
     
-    /*  Fill the rectangle in the color */
-    SDL_SetRenderDrawColor(renderer, r, g, b, 255);
-    SDL_RenderFillRect(renderer, &rect);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glVertexAttribPointer(a_position_location, 2, GL_FLOAT, GL_FALSE,4 * sizeof(GL_FLOAT), BUFFER_OFFSET(0));
+    glVertexAttribPointer(a_texture_coordinates_location, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GL_FLOAT), BUFFER_OFFSET(2 * sizeof(GL_FLOAT)));
+    glEnableVertexAttribArray(a_position_location);
+    glEnableVertexAttribArray(a_texture_coordinates_location);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     
-    /* update screen */
-    SDL_RenderPresent(renderer);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+     */
+    ///
     
+    SDL_GL_SwapWindow((SDL_Window*)params);
+    //SDL_Delay(1);
 }
+
 
 int SDL_main(int argc, char *argv[])
 {
+
+    // position X, Y, texture S, T
+    static const float rect[] = {-1.0f, -1.0f, 0.0f, 0.0f,
+        -1.0f,  1.0f, 0.0f, 1.0f,
+        1.0f, -1.0f, 1.0f, 0.0f,
+        1.0f,  1.0f, 1.0f, 1.0f};
+    
     printf( "Initializing in SDL\n\n");
     
     SDL_Init(SDL_INIT_EVERYTHING);
@@ -389,20 +398,36 @@ int SDL_main(int argc, char *argv[])
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
     SDL_Window *win = SDL_CreateWindow(NULL, 0, 0, 0, 0, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS);
-    SDL_GLContext context = SDL_GL_CreateContext(win);
-    
     assert(win);
+    SDL_GLContext context = SDL_GL_CreateContext(win);
     assert(context);
+    SDL_Log( "%s\n", glGetString(GL_VERSION));
     
-    printf( "%s\n", glGetString(GL_VERSION));
+    int IMGflags = IMG_INIT_JPG|IMG_INIT_PNG;
+    int initted = IMG_Init(IMGflags);
+    if(initted & IMGflags != IMGflags) {
+        SDL_Log("IMG_Init: Failed to init required jpg and png support!\n");
+        SDL_Log("IMG_Init: %s\n", IMG_GetError());
+        // handle error
+    }
     
-    printf( "Initializing in PNG loading\n\n");
+    SDL_Surface *image;
+    image=IMG_Load("lambda.png");
+    if(!image) {
+        printf("IMG_Load: %s\n", IMG_GetError());
+        // handle error
+    } else {
+        printf("IMG_Load: LOADED\n");
+    }
     
     /*
+    printf( "Initializing in PNG loading\n\n");
+    
     const GLuint tex = load_png_asset_into_texture("lambda.png");
     
     buffer = create_vbo(sizeof(rect), rect, GL_STATIC_DRAW);
@@ -411,42 +436,14 @@ int SDL_main(int argc, char *argv[])
     a_position_location = glGetAttribLocation(program, "a_Position");
     a_texture_coordinates_location = glGetAttribLocation(program, "a_TextureCoordinates");
     u_texture_unit_location = glGetUniformLocation(program, "u_TextureUnit");
-    */
+*/
+     
     // Events
      SDL_SetEventFilter(HandleAppEvents, NULL);
     
     // DRAW
-    int done = 0;
-    SDL_Event event;
-    while (!done) {
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                done = 1;
-            }
-        }
-        glClearColor(randomFloat(0.0, 1.0), 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        SDL_GL_SwapWindow(win);
-        SDL_Delay(1);
-    }
-        /*
-        glUseProgram(program);
-        
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glUniform1i(u_texture_unit_location, 0);
-        
-        glBindBuffer(GL_ARRAY_BUFFER, buffer);
-        glVertexAttribPointer(a_position_location, 2, GL_FLOAT, GL_FALSE,
-                              4 * sizeof(GL_FLOAT), BUFFER_OFFSET(0));
-        glVertexAttribPointer(a_texture_coordinates_location, 2, GL_FLOAT, GL_FALSE,
-                              4 * sizeof(GL_FLOAT), BUFFER_OFFSET(2 * sizeof(GL_FLOAT)));
-        glEnableVertexAttribArray(a_position_location);
-        glEnableVertexAttribArray(a_texture_coordinates_location);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-         */
+    SDL_iPhoneSetAnimationCallback(win, 1, render, win);
+
 
     
     //___run_gambit();
