@@ -10,4 +10,5 @@
   (load
    (energy: remote/debuggee)
    (math: matrix)
-   (fusion: core))))
+   ;;(fusion: core)
+   )))

@@ -9,7 +9,7 @@
 (define (main)
   ;; Install and run the remote REPL: IP address of the computer running the debug server
   (SDL_Log "***** Trying to connect to Gambit Debug Server *****")
-  (if (remote-repl-setup! "192.168.1.131" port: 20000)
+  (if (remote-repl-setup! "192.168.200.114" port: 20000)
       (begin
        (remote-repl-run!)
        (SDL_Log "***** Successfully connected to Gambit Debug Server *****"))
@@ -45,8 +45,4 @@
           (unless (= SDL_QUIT (SDL_Event-type event))
                   (recur (++ iteration))))))))
 
-;; (cond-expand
-;;  (android (c-define (c-scheme-main) () void "scheme_main" "" (main)))
-;;  (host (main))
-;;  (else #!void))
 (main)

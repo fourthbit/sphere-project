@@ -45,6 +45,9 @@ end-c-lambda
 
 (parameterize
  ((current-directory (cond-expand (android "sdcard") (else "."))))
- (SDL_Log (if (file-exists? "main-minimal.o1") "FILE FOUND" "FILE **NOT** FOUND"))
- (load "main-minimal.o1"))
+ (SDL_Log (if (file-exists? "main-minimal.o1")
+              (begin
+                (load "main-minimal.o1")
+                "FILE FOUND")
+              "FILE **NOT** FOUND")))
 (SDL_Log "SUCESS")

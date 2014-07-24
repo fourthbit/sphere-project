@@ -10,7 +10,7 @@
             (create-symbolic-link (string-append (%sphere-path 'sdl2) "deps/SDL2-2.0.3") SDL-link))))
 
 (define-task android:compile ()
-  (if #f ;; #t to compile as a single app executable
+  (if #t ;; #t to compile as a single app executable
       ;; Compile all modules within the app executable
       (fusion#android-compile-app "main" 'main
                                   target: 'debug
@@ -86,7 +86,7 @@
         ;; - Uploading code to the Documents folder (created at runtime, read/write when the app is running)
         ;; - Dynamically running with the Remote Debugger in Emacs or the terminal
         ;; Finally, take into account that loadable libraries do work only on the simulator
-        (fusion#ios-compile-loadable-set "main.o1" 'main
+        (fusion#ios-compile-loadable-set "main-minimal.o1" 'main-minimal
                                          merge-modules: #f
                                          target: 'debug
                                          arch: arch
@@ -101,6 +101,7 @@
                                 target: 'debug
                                 cond-expand-features: '(ios debug)
                                 compiler-options: '(debug)
+                                cc-options: (list "-w" (string-append "-I" (ios-directory) "SDL/include"))
                                 verbose: #t))))
 
 (define-task ios:run ()
