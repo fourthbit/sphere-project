@@ -1,3 +1,5 @@
 build
 bin
 lib
+.DS_Store
+ios/src/libspheres.a
