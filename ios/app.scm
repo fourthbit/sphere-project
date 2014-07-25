@@ -11,20 +11,23 @@
 
 ;; Loads an image from the given path and creates a texture object to hold it
 (define (load-texture window path)
-  (let* ((texture-img* (IMG_Load path))
+  (let* ((texture-img* (IMG_Load path)) ;; default format: ARGB8888
          (texture-id* (alloc-GLuint* 1)))
+    ;; Alternative method (using GL_RGBA). Remember that PixelFormat is backwards in SDL
+    ;; (SDL_ConvertSurfaceFormat texture-img-unformatted* SDL_PIXELFORMAT_ABGR8888 0)
     ;; Generate and bind texture
     (glGenTextures 1 texture-id*)
     (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
     ;; Check errors
     (check-gl-error
-     (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA
+     (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA ; internal format
                    (SDL_Surface-w texture-img*) (SDL_Surface-h texture-img*)
-                   0 GL_RGBA GL_UNSIGNED_BYTE
+                   0 GL_BGRA_EXT GL_UNSIGNED_BYTE
                    (SDL_Surface-pixels texture-img*)))
+    ;; FILTER: Necessary for NPOT textures in GLES2
     (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
     (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
-    ;; CLAMP: Necessary for NPOT textures in GLES
+    ;; WRAP: Necessary for NPOT textures in GLES2
     (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
     (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
     ;; Unbind and free the surface
@@ -51,7 +54,6 @@
 (define* (create-buffer-from-vector vertex-data-vector (buffer-type GL_STATIC_DRAW))
   (let ((buffer-id* (alloc-GLuint* 1)))
     (glGenBuffers 1 buffer-id*)
-
     (let* ((buffer-id (*->GLuint buffer-id*))
            (vertex-data (f32vector->GLfloat* vertex-data-vector)))
       (glBindBuffer GL_ARRAY_BUFFER buffer-id)
@@ -67,13 +69,11 @@
 (define (draw-vbo vbo-id* program-id type count attribs-callback)
   (let ((vbo-id (*->GLuint vbo-id*)))
     (glUseProgram program-id)
-
     (if (check-gl-error (glBindBuffer GL_ARRAY_BUFFER vbo-id))
         (begin
           (attribs-callback)
           (check-gl-error (glDrawArrays type 0 count))
           (glBindBuffer GL_ARRAY_BUFFER 0)))
-
     (glUseProgram 0)))
 
 
@@ -127,15 +127,6 @@
                                     qx1 qy2 0.0 1.0
                                     qx2 qy2 1.0 1.0))
 
-;; Executes the given form and checks if GL's state is valid
-(define-macro (check-gl-error exp)
-  `(begin
-     ,exp
-     (let ((error (glGetError)))
-       (if (not (= error GL_NO_ERROR))
-           (begin
-             (SDL_Log (string-append "GL Error: " (object->string error) " - " (object->string ',exp))))))))
-
 ;; Loads the shaders and sets the location of the necessary attributes
 (define (init-shaders)
   (set! color-program-id
@@ -149,14 +140,10 @@
                         (lambda (program-id)
                           (glBindAttribLocation program-id 0 "position")
                           (glBindAttribLocation program-id 1 "texCoord"))))
-
   (glUseProgram tex2d-program-id)
-
   (check-gl-error (set! attr1 (glGetUniformLocation tex2d-program-id "colorTexture")))
   (check-gl-error (set! attr2 (glGetUniformLocation tex2d-program-id "perspectiveMatrix")))
-
-  (glUseProgram 0)
-)
+  (glUseProgram 0))
 
 ;; Creates VBOs from the static vectors defined at the top of the file
 (define (init-buffers)
@@ -280,8 +267,6 @@
        (or (= (get-key-code event) SDLK_ESCAPE)
            (= (get-key-code event) SDLK_AC_BACK)))))
 
-
-
 (define (init-app)
   (let ((mode* (alloc-SDL_DisplayMode))
         (flags-sdl (bitwise-ior SDL_INIT_VIDEO SDL_INIT_AUDIO))
@@ -290,41 +275,36 @@
           (fusion:error "Couldn't initialize SDL!"))
     (when (not (= (IMG_Init flags-img) flags-img))
           (fusion:error "Couldn't initialize SDL Image!"))
-    
-    (SDL_GL_SetAttribute SDL_GL_CONTEXT_PROFILE_MASK SDL_GL_CONTEXT_PROFILE_ES)
-    (SDL_GL_SetAttribute SDL_GL_CONTEXT_MAJOR_VERSION 2)
-    (SDL_GL_SetAttribute SDL_GL_CONTEXT_MINOR_VERSION 0)
-    
-    ;; (cond-expand
-    ;;  (mobile
-    ;;   (SDL_GL_SetAttribute SDL_GL_CONTEXT_PROFILE_MASK SDL_GL_CONTEXT_PROFILE_ES)
-    ;;   (SDL_GL_SetAttribute SDL_GL_CONTEXT_MAJOR_VERSION 2)
-    ;;   (SDL_GL_SetAttribute SDL_GL_CONTEXT_MINOR_VERSION 0))
-    ;;  (else #!void))
-
+    (cond-expand
+     (host #!void)
+     (else
+      (SDL_GL_SetAttribute SDL_GL_CONTEXT_PROFILE_MASK SDL_GL_CONTEXT_PROFILE_ES)
+      (SDL_GL_SetAttribute SDL_GL_CONTEXT_MAJOR_VERSION 2)
+      (SDL_GL_SetAttribute SDL_GL_CONTEXT_MINOR_VERSION 0)))
+    (SDL_GL_SetAttribute SDL_GL_ALPHA_SIZE 8)
+    (SDL_GL_SetAttribute SDL_GL_RED_SIZE 8)
+    (SDL_GL_SetAttribute SDL_GL_GREEN_SIZE 8)
+    (SDL_GL_SetAttribute SDL_GL_BLUE_SIZE 8)
     (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
+    ;; Get screen size
     (SDL_GetDisplayMode 0 0 mode*)
-
     (set! screen-width (SDL_DisplayMode-w mode*))
     (set! screen-height (SDL_DisplayMode-h mode*))
     (set! window
           (SDL_CreateWindow "SDL/GL" SDL_WINDOWPOS_CENTERED SDL_WINDOWPOS_CENTERED screen-width screen-height
-                            (bitwise-ior SDL_WINDOW_OPENGL SDL_WINDOW_RESIZABLE)))
+                            (bitwise-ior SDL_WINDOW_OPENGL SDL_WINDOW_RESIZABLE SDL_WINDOW_BORDERLESS)))
     (unless window (fusion:error "Unable to create render window" (SDL_GetError)))
-
+    ;; OpenGL/ES context
     (let ((ctx (SDL_GL_CreateContext window)))
       (SDL_Log (string-append "SDL screen size: " (object->string screen-width) " x " (object->string screen-height)))
       (SDL_Log (string-append "OpenGL Version: " (*->string (glGetString GL_VERSION))))
       ;; Glew: initialize extensions
       (cond-expand (host (glewInit)) (else #!void)))
-
     ;; OpenGL viewport
     (glViewport 0 0 screen-width screen-height)
     (glScissor 0 0 screen-width screen-height)
-    
-    (init-gui window screen-width screen-height)
-
-    ))
+    ;; Init GUI
+    (init-gui window screen-width screen-height)))
 
 (define current-ticks 0)
 (define previous-ticks 0)
@@ -344,12 +324,6 @@
     (set! current-ticks (SDL_GetTicks))
     (set! time-step (/ (- current-ticks previous-ticks) 1000.0))
     (set! previous-ticks current-ticks)
-
-    
-    ;; (glClearColor 1.0 0.0 0.0 0.0)
-    ;; (glClear GL_COLOR_BUFFER_BIT)
-    ;; (SDL_GL_SwapWindow window)
-    
     (draw time-step window)
     ;;(free event)
     ))
@@ -359,87 +333,3 @@
   (SDL_DestroyWindow window)
   (SDL_Quit)
   (exit))
-
-;; (define (main)
-;;   ;; A very basic loop to test SDL
-;;   (let ((mode* (alloc-SDL_DisplayMode))
-;;         (flags-img (bitwise-ior IMG_INIT_JPG IMG_INIT_PNG)))
-;;     (when (< (SDL_Init (bitwise-ior SDL_INIT_VIDEO SDL_INIT_AUDIO)) 0)
-;;           (fusion:error "Couldn't initialize SDL!"))
-;;     (when (not (= (IMG_Init flags-img) flags-img))
-;;           (fusion:error "Couldn't initialize SDL Image!"))
-    
-;;     (SDL_GL_SetAttribute SDL_GL_CONTEXT_PROFILE_MASK SDL_GL_CONTEXT_PROFILE_ES)
-;;     (SDL_GL_SetAttribute SDL_GL_CONTEXT_MAJOR_VERSION 2)
-;;     (SDL_GL_SetAttribute SDL_GL_CONTEXT_MINOR_VERSION 0)
-    
-;;     ;; (cond-expand
-;;     ;;  (mobile
-;;     ;;   (SDL_GL_SetAttribute SDL_GL_CONTEXT_PROFILE_MASK SDL_GL_CONTEXT_PROFILE_ES)
-;;     ;;   (SDL_GL_SetAttribute SDL_GL_CONTEXT_MAJOR_VERSION 2)
-;;     ;;   (SDL_GL_SetAttribute SDL_GL_CONTEXT_MINOR_VERSION 0))
-;;     ;;  (else #!void))
-
-;;     (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
-;;     (SDL_GetDisplayMode 0 0 mode*)
-
-;;     (let* ((screen-width (SDL_DisplayMode-w mode*))
-;;            (screen-height (SDL_DisplayMode-h mode*))
-;;            #;(screen-width 640)
-;;            #;(screen-height 480)
-;;            (window (SDL_CreateWindow
-;;                     "SDL/GL" SDL_WINDOWPOS_CENTERED SDL_WINDOWPOS_CENTERED screen-width screen-height
-;;                     (bitwise-ior SDL_WINDOW_OPENGL SDL_WINDOW_RESIZABLE))))
-;;       (unless window (fusion:error "Unable to create render window" (SDL_GetError)))
-
-;;       (let ((event (alloc-SDL_Event))
-;;             (ctx (SDL_GL_CreateContext window))
-;;             (current-ticks 0)
-;;             (previous-ticks 0)
-;;             (time-step 0)
-;;             (exit-app #f))
-;;         (SDL_Log (string-append "SDL screen size: " (object->string screen-width) " x " (object->string screen-height)))
-;;         (SDL_Log (string-append "OpenGL Version: " (*->string (glGetString GL_VERSION))))
-
-;;         ;; Glew: initialize extensions
-;;         (cond-expand
-;;          (host (glewInit))
-;;          (else #!void))
-
-;;         ;; OpenGL viewport
-;;         (glViewport 0 0 screen-width screen-height)
-;;         (glScissor 0 0 screen-width screen-height)
-
-;;         (init-gui window screen-width screen-height)
-
-;;         (let recur ((iteration 0))
-;;           (set! current-ticks (SDL_GetTicks))
-;;           (set! time-step (/ (- current-ticks previous-ticks) 1000.0))
-;;           (set! previous-ticks current-ticks)
-
-;;                                         ; Poll events queue
-;;           (let ev-poll ()
-;;             (when (= 1 (SDL_PollEvent event))
-;;                   (cond ((exit-application? event)
-;;                          (set! exit-app #t))
-;;                         ((click-action? event)
-;;                          (play-sound))
-;;                         ((resize-event? event)
-;;                          (let ((resize (SDL_Event-window event)))
-;;                            (resize-gui (SDL_WindowEvent-data1 resize) (SDL_WindowEvent-data2 resize)))))
-
-;;                   (ev-poll)))
-
-;;           (draw time-step window)
-
-;;           (SDL_Delay 20)
-
-;;           (unless exit-app
-;;                   (recur (++ iteration))))
-
-;;         (destroy-gui)
-;;         (destroy-audio)
-
-;;         (SDL_DestroyWindow window)
-;;         (SDL_Quit)
-;;         (exit)))))

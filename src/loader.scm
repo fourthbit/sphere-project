@@ -56,8 +56,9 @@ end-c-lambda
  (SDL_Log "Successfully loaded environment"))
 
 (define (update-app)
-  (shell-command "wget -N localhost:8000/app.scm")
-  (load "app.scm"))
+  (if (zero? (shell-command "wget -N localhost:8000/app.scm"))
+      (load "app.scm")
+      (println "App not updated")))
 
 
 

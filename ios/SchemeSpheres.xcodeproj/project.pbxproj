@@ -21,7 +21,6 @@
 		3825BC3D1981D9EC007D5937 /* app.scm in Resources */ = {isa = PBXBuildFile; fileRef = 3825BC3C1981D9EC007D5937 /* app.scm */; };
 		3825BC6A198274BD007D5937 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 3825BC68198274BD007D5937 /* assets */; };
 		3825BC6B198274BD007D5937 /* spheres in Resources */ = {isa = PBXBuildFile; fileRef = 3825BC69198274BD007D5937 /* spheres */; };
-		38294B021981550800E6C773 /* main-minimal.o1 in Resources */ = {isa = PBXBuildFile; fileRef = 38294B011981550800E6C773 /* main-minimal.o1 */; };
 		38294B11198177DD00E6C773 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 38294B10198177DD00E6C773 /* libz.dylib */; };
 		385CD0011981A3B8000CBFB3 /* libSDL2_image.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 385CD0001981A3B8000CBFB3 /* libSDL2_image.a */; };
 		385E5B26196603DB0021B9C4 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 385E5B25196603DB0021B9C4 /* Default-568h@2x.png */; };
@@ -51,7 +50,6 @@
 		3825BC3C1981D9EC007D5937 /* app.scm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = app.scm; sourceTree = "<group>"; };
 		3825BC68198274BD007D5937 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = "<group>"; };
 		3825BC69198274BD007D5937 /* spheres */ = {isa = PBXFileReference; lastKnownFileType = folder; path = spheres; sourceTree = "<group>"; };
-		38294B011981550800E6C773 /* main-minimal.o1 */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = "main-minimal.o1"; sourceTree = "<group>"; };
 		38294B10198177DD00E6C773 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
 		385CCFFE1981A3B8000CBFB3 /* SDL_image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDL_image.h; sourceTree = "<group>"; };
 		385CD0001981A3B8000CBFB3 /* libSDL2_image.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libSDL2_image.a; sourceTree = "<group>"; };
@@ -207,7 +205,6 @@
 				3825BC68198274BD007D5937 /* assets */,
 				3825BC69198274BD007D5937 /* spheres */,
 				3825BC3C1981D9EC007D5937 /* app.scm */,
-				38294B011981550800E6C773 /* main-minimal.o1 */,
 				385E5B25196603DB0021B9C4 /* Default-568h@2x.png */,
 				FD77A07E0E26BDA900F39101 /* Default.png */,
 				FD77A07C0E26BD8C00F39101 /* Icon.png */,
@@ -445,7 +442,6 @@
 				FD77A07F0E26BDA900F39101 /* Default.png in Resources */,
 				3825BC6A198274BD007D5937 /* assets in Resources */,
 				385E5B26196603DB0021B9C4 /* Default-568h@2x.png in Resources */,
-				38294B021981550800E6C773 /* main-minimal.o1 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
