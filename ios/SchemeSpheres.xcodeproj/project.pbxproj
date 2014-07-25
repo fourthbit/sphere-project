@@ -18,7 +18,6 @@
 		3825BC341981A774007D5937 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3825BC331981A774007D5937 /* MobileCoreServices.framework */; };
 		3825BC381981A82A007D5937 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3825BC371981A82A007D5937 /* ImageIO.framework */; };
 		3825BC391981A84B007D5937 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FDB8BFC50E5A0F6A00980157 /* CoreGraphics.framework */; };
-		3825BC3D1981D9EC007D5937 /* app.scm in Resources */ = {isa = PBXBuildFile; fileRef = 3825BC3C1981D9EC007D5937 /* app.scm */; };
 		3825BC6A198274BD007D5937 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 3825BC68198274BD007D5937 /* assets */; };
 		3825BC6B198274BD007D5937 /* spheres in Resources */ = {isa = PBXBuildFile; fileRef = 3825BC69198274BD007D5937 /* spheres */; };
 		38294B11198177DD00E6C773 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 38294B10198177DD00E6C773 /* libz.dylib */; };
@@ -47,7 +46,6 @@
 		3825BC331981A774007D5937 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		3825BC351981A7DA007D5937 /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
 		3825BC371981A82A007D5937 /* ImageIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageIO.framework; path = System/Library/Frameworks/ImageIO.framework; sourceTree = SDKROOT; };
-		3825BC3C1981D9EC007D5937 /* app.scm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = app.scm; sourceTree = "<group>"; };
 		3825BC68198274BD007D5937 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = "<group>"; };
 		3825BC69198274BD007D5937 /* spheres */ = {isa = PBXFileReference; lastKnownFileType = folder; path = spheres; sourceTree = "<group>"; };
 		38294B10198177DD00E6C773 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
@@ -204,7 +202,6 @@
 			children = (
 				3825BC68198274BD007D5937 /* assets */,
 				3825BC69198274BD007D5937 /* spheres */,
-				3825BC3C1981D9EC007D5937 /* app.scm */,
 				385E5B25196603DB0021B9C4 /* Default-568h@2x.png */,
 				FD77A07E0E26BDA900F39101 /* Default.png */,
 				FD77A07C0E26BD8C00F39101 /* Icon.png */,
@@ -437,7 +434,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				FD77A07D0E26BD8C00F39101 /* Icon.png in Resources */,
-				3825BC3D1981D9EC007D5937 /* app.scm in Resources */,
 				3825BC6B198274BD007D5937 /* spheres in Resources */,
 				FD77A07F0E26BDA900F39101 /* Default.png in Resources */,
 				3825BC6A198274BD007D5937 /* assets in Resources */,

@@ -44,15 +44,15 @@ end-c-lambda
 
 ;; Load main module dynamically
 
-(define eval-include
+(define eval-file
   (lambda (file)
     (for-each eval (with-input-from-file file read-all))))
 
 (parameterize
  ((current-directory (cond-expand (android "sdcard") (else "spheres"))))
- (load "syntax-case.o1")
- (eval-include "base-macros.scm")
- (eval-include "assert-macros.scm")
+ (load "core/lib/syntax-case.o1")
+ (eval-file "core/src/base-macros.scm")
+ (eval-file "core/src/assert-macros.scm")
  (SDL_Log "Successfully loaded environment"))
 
 (define (update-app)
