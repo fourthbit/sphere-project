@@ -39,10 +39,12 @@ end-c-lambda
  (else
   #!void))
 
+;; TODO: look for the right place
 (define eval-file
   (lambda (file)
     (for-each eval (with-input-from-file file read-all))))
 
+;; Sphere environment
 (parameterize
  ((current-directory
    (cond-expand (android "sdcard") (else "spheres"))))
@@ -51,17 +53,20 @@ end-c-lambda
  (eval-file "core/src/assert-macros.scm")
  (SDL_Log "Successfully loaded environment"))
 
-(define (update-globals)
+;; Initialize globals
+(define (init-globals)
   (if (zero? (shell-command "wget -N localhost:8000/globals.scm -O assets/src/globals.scm"))
       (load "assets/src/globals.scm")
       (println "globals.scm could not be retrieved")))
 
+;; Update the app Scheme source code
 (define (update-app)
   (if (zero? (shell-command "wget -N localhost:8000/app.scm -O assets/src/app.scm"))
       (load "assets/src/app.scm")
       (println "app.scm could not be retrieved")))
 
-(update-globals)
+;; Run globals and app code automatically
+(init-globals)
 (update-app)
 
 ;; Install and run the remote REPL: IP address of the computer running the debug server
