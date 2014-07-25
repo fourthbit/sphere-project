@@ -383,7 +383,7 @@ void render(void* params) {
 
 int SDL_main(int argc, char *argv[])
 {
-
+/*
     // position X, Y, texture S, T
     static const float rect[] = {-1.0f, -1.0f, 0.0f, 0.0f,
         -1.0f,  1.0f, 0.0f, 1.0f,
@@ -424,29 +424,28 @@ int SDL_main(int argc, char *argv[])
     } else {
         printf("IMG_Load: LOADED\n");
     }
-    
-    /*
-    printf( "Initializing in PNG loading\n\n");
-    
-    const GLuint tex = load_png_asset_into_texture("lambda.png");
-    
-    buffer = create_vbo(sizeof(rect), rect, GL_STATIC_DRAW);
-    program = build_program_from_assets("shader.vsh", "shader.fsh");
-    
-    a_position_location = glGetAttribLocation(program, "a_Position");
-    a_texture_coordinates_location = glGetAttribLocation(program, "a_TextureCoordinates");
-    u_texture_unit_location = glGetUniformLocation(program, "u_TextureUnit");
-*/
+  */  
+//    
+//    printf( "Initializing in PNG loading\n\n");
+//    
+//    const GLuint tex = load_png_asset_into_texture("lambda.png");
+//    
+//    buffer = create_vbo(sizeof(rect), rect, GL_STATIC_DRAW);
+//    program = build_program_from_assets("shader.vsh", "shader.fsh");
+//    
+//    a_position_location = glGetAttribLocation(program, "a_Position");
+//    a_texture_coordinates_location = glGetAttribLocation(program, "a_TextureCoordinates");
+//    u_texture_unit_location = glGetUniformLocation(program, "u_TextureUnit");
      
     // Events
-     SDL_SetEventFilter(HandleAppEvents, NULL);
+    //SDL_SetEventFilter(HandleAppEvents, NULL);
     
     // DRAW
-    SDL_iPhoneSetAnimationCallback(win, 1, render, win);
+    //SDL_iPhoneSetAnimationCallback(win, 1, render, win);
 
 
     
-    //___run_gambit();
+    ___run_gambit();
     
     return 0;
 }

@@ -30,7 +30,7 @@
         ;; and source code. This can be used during Android development in the following ways:
         ;; - Bundling the code within the APK
         ;; - Uploading the code to the SD card
-        ;; - Dynamically running with the Remote Debugger in Emacs or the terminal
+        ;; - Dynamically running code within the Remote Debugger in Emacs or the terminal
         (fusion#android-compile-loadable-set "main-minimal.o1" 'main-minimal
                                              merge-modules: #f
                                              target: 'debug
@@ -73,6 +73,7 @@
                               target: 'debug
                               cond-expand-features: '(debug)
                               compiler-options: '(debug)
+                              ;; XXX ADD THIS OPTIMIZATIONS
                               cc-options: '("-D___SINGLE_HOST"
                                             "-O1"
                                             "-fdiagnostics-show-note-include-stack"
@@ -84,15 +85,18 @@
         ;; and source code. This can be used during iOS development in the following ways:
         ;; - Uploading code to the Resources folder (part of the app bundle)
         ;; - Uploading code to the Documents folder (created at runtime, read/write when the app is running)
-        ;; - Dynamically running with the Remote Debugger in Emacs or the terminal
+        ;; - Dynamically running within the Remote Debugger in Emacs or the terminal
         ;; Finally, take into account that loadable libraries do work only on the simulator
+        #;
         (fusion#ios-compile-loadable-set "main-minimal.o1" 'main-minimal
                                          merge-modules: #f
                                          target: 'debug
                                          arch: arch
                                          cond-expand-features: '(ios debug)
                                          compiler-options: '(debug)
-                                         cc-options: (list "-w" (string-append "-I" (ios-directory) "SDL/include"))
+                                         cc-options: (list "-w"
+                                                           (string-append "-I" (ios-directory) "SDL/include")
+                                                           (string-append "-I" (ios-directory) "SDL_image/include"))
                                          verbose: #t)
         ;; Compile the iOS app with just the loader module
         ;; The loader will decide which object to load according to the runtime architecture
@@ -101,7 +105,9 @@
                                 target: 'debug
                                 cond-expand-features: '(ios debug)
                                 compiler-options: '(debug)
-                                cc-options: (list "-w" (string-append "-I" (ios-directory) "SDL/include"))
+                                cc-options: (list "-w"
+                                                  (string-append "-I" (ios-directory) "SDL/include")
+                                                  (string-append "-I" (ios-directory) "SDL_image/include"))
                                 verbose: #t))))
 
 (define-task ios:run ()

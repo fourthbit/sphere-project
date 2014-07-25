@@ -33,21 +33,51 @@ ___result = (char *) c;
 end-c-lambda
   ))
   (define printf (c-lambda (char-string) void "printf(\"%s\",___arg1);"))
-  (printf (string-append "iOS Hardware: "(ios-device-description) "\n"))
-  (printf (string-append (number->string (ios-device)) "\n")))
+  ;;(printf (string-append (number->string (ios-device)) "\n"))
+  (printf (string-append "iOS Hardware: "(ios-device-description) "\n")))
  ;; Host platform
  (else
   #!void))
 
-(SDL_Log (current-directory))
-(SDL_Log (object->string (directory-files)))
+;;(SDL_Log (current-directory))
+;;(SDL_Log (object->string (directory-files)))
+
 ;; Load main module dynamically
 
+(define eval-include
+  (lambda (file)
+    (for-each eval (with-input-from-file file read-all))))
+
 (parameterize
- ((current-directory (cond-expand (android "sdcard") (else "."))))
- (SDL_Log (if (file-exists? "main-minimal.o1")
-              (begin
-                (load "main-minimal.o1")
-                "FILE FOUND")
-              "FILE **NOT** FOUND")))
-(SDL_Log "SUCESS")
+ ((current-directory (cond-expand (android "sdcard") (else "spheres"))))
+ (load "syntax-case.o1")
+ (eval-include "base-macros.scm")
+ (eval-include "assert-macros.scm")
+ (SDL_Log "Successfully loaded environment"))
+
+(define (update-app)
+  (shell-command "wget -N localhost:8000/app.scm")
+  (load "app.scm"))
+
+
+
+
+
+(define window #f)
+(define screen-width)
+(define screen-height)
+
+
+
+
+;; Install and run the remote REPL: IP address of the computer running the debug server
+(if (remote-repl-setup! "localhost" port: 20000)
+    (begin
+      (remote-repl-run!)
+      (SDL_Log "***** Successfully connected to Gambit Debug Server *****"))
+    (SDL_Log "***** Unable to connect to Gambit Debug Server. Are you running 'sense'? *****"))
+
+(SDL_Log "***** Sleeping *****")
+
+(thread-sleep! +inf.0)
+

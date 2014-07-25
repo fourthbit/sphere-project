@@ -18,13 +18,11 @@
 		3825BC341981A774007D5937 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3825BC331981A774007D5937 /* MobileCoreServices.framework */; };
 		3825BC381981A82A007D5937 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3825BC371981A82A007D5937 /* ImageIO.framework */; };
 		3825BC391981A84B007D5937 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FDB8BFC50E5A0F6A00980157 /* CoreGraphics.framework */; };
+		3825BC3D1981D9EC007D5937 /* app.scm in Resources */ = {isa = PBXBuildFile; fileRef = 3825BC3C1981D9EC007D5937 /* app.scm */; };
+		3825BC6A198274BD007D5937 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 3825BC68198274BD007D5937 /* assets */; };
+		3825BC6B198274BD007D5937 /* spheres in Resources */ = {isa = PBXBuildFile; fileRef = 3825BC69198274BD007D5937 /* spheres */; };
 		38294B021981550800E6C773 /* main-minimal.o1 in Resources */ = {isa = PBXBuildFile; fileRef = 38294B011981550800E6C773 /* main-minimal.o1 */; };
-		38294B0419815A7700E6C773 /* png_image.c in Sources */ = {isa = PBXBuildFile; fileRef = 38294B0319815A7700E6C773 /* png_image.c */; };
-		38294B0B19815C4300E6C773 /* libpng16.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 38294B0A19815C4300E6C773 /* libpng16.a */; };
-		38294B0F19815DC200E6C773 /* lambda.png in Resources */ = {isa = PBXBuildFile; fileRef = 38294B0E19815DC200E6C773 /* lambda.png */; };
 		38294B11198177DD00E6C773 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 38294B10198177DD00E6C773 /* libz.dylib */; };
-		38294B14198180AC00E6C773 /* shader.fsh in Resources */ = {isa = PBXBuildFile; fileRef = 38294B12198180AC00E6C773 /* shader.fsh */; };
-		38294B15198180AC00E6C773 /* shader.vsh in Resources */ = {isa = PBXBuildFile; fileRef = 38294B13198180AC00E6C773 /* shader.vsh */; };
 		385CD0011981A3B8000CBFB3 /* libSDL2_image.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 385CD0001981A3B8000CBFB3 /* libSDL2_image.a */; };
 		385E5B26196603DB0021B9C4 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 385E5B25196603DB0021B9C4 /* Default-568h@2x.png */; };
 		38A7C10D1959994F00FD6D80 /* libSDL2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 38A7C1091959994F00FD6D80 /* libSDL2.a */; };
@@ -50,17 +48,11 @@
 		3825BC331981A774007D5937 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		3825BC351981A7DA007D5937 /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
 		3825BC371981A82A007D5937 /* ImageIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageIO.framework; path = System/Library/Frameworks/ImageIO.framework; sourceTree = SDKROOT; };
+		3825BC3C1981D9EC007D5937 /* app.scm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = app.scm; sourceTree = "<group>"; };
+		3825BC68198274BD007D5937 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = "<group>"; };
+		3825BC69198274BD007D5937 /* spheres */ = {isa = PBXFileReference; lastKnownFileType = folder; path = spheres; sourceTree = "<group>"; };
 		38294B011981550800E6C773 /* main-minimal.o1 */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.bundle"; path = "main-minimal.o1"; sourceTree = "<group>"; };
-		38294B0319815A7700E6C773 /* png_image.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = png_image.c; sourceTree = "<group>"; };
-		38294B0519815A9F00E6C773 /* png_image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = png_image.h; sourceTree = "<group>"; };
-		38294B0819815C4300E6C773 /* png.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = png.h; sourceTree = "<group>"; };
-		38294B0A19815C4300E6C773 /* libpng16.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libpng16.a; sourceTree = "<group>"; };
-		38294B0C19815CDA00E6C773 /* pngconf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pngconf.h; sourceTree = "<group>"; };
-		38294B0D19815D5600E6C773 /* pnglibconf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pnglibconf.h; sourceTree = "<group>"; };
-		38294B0E19815DC200E6C773 /* lambda.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = lambda.png; sourceTree = "<group>"; };
 		38294B10198177DD00E6C773 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
-		38294B12198180AC00E6C773 /* shader.fsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = shader.fsh; sourceTree = "<group>"; };
-		38294B13198180AC00E6C773 /* shader.vsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = shader.vsh; sourceTree = "<group>"; };
 		385CCFFE1981A3B8000CBFB3 /* SDL_image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SDL_image.h; sourceTree = "<group>"; };
 		385CD0001981A3B8000CBFB3 /* libSDL2_image.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libSDL2_image.a; sourceTree = "<group>"; };
 		385E5B25196603DB0021B9C4 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
@@ -166,7 +158,6 @@
 				FD779EDE0E26BA1200F39101 /* CoreAudio.framework in Frameworks */,
 				FD77A0850E26BDB800F39101 /* AudioToolbox.framework in Frameworks */,
 				38294B11198177DD00E6C773 /* libz.dylib in Frameworks */,
-				38294B0B19815C4300E6C773 /* libpng16.a in Frameworks */,
 				38A7C10D1959994F00FD6D80 /* libSDL2.a in Frameworks */,
 				385CD0011981A3B8000CBFB3 /* libSDL2_image.a in Frameworks */,
 				3815AEC81964CB9200D24481 /* libspheres.a in Frameworks */,
@@ -188,7 +179,6 @@
 		29B97314FDCFA39411CA2CEA /* CustomTemplate */ = {
 			isa = PBXGroup;
 			children = (
-				38294B0619815C4300E6C773 /* libpng */,
 				385CCFFC1981A3B8000CBFB3 /* SDL_image */,
 				38A7C0B81959994F00FD6D80 /* SDL */,
 				380320F8195D822B002B40D9 /* gambit */,
@@ -207,8 +197,6 @@
 				38032193195F2343002B40D9 /* main.c */,
 				38032194195F2343002B40D9 /* UIDevice+Hardware.h */,
 				38032195195F2343002B40D9 /* UIDevice+Hardware.m */,
-				38294B0519815A9F00E6C773 /* png_image.h */,
-				38294B0319815A7700E6C773 /* png_image.c */,
 			);
 			name = src;
 			sourceTree = "<group>";
@@ -216,9 +204,9 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				38294B12198180AC00E6C773 /* shader.fsh */,
-				38294B13198180AC00E6C773 /* shader.vsh */,
-				38294B0E19815DC200E6C773 /* lambda.png */,
+				3825BC68198274BD007D5937 /* assets */,
+				3825BC69198274BD007D5937 /* spheres */,
+				3825BC3C1981D9EC007D5937 /* app.scm */,
 				38294B011981550800E6C773 /* main-minimal.o1 */,
 				385E5B25196603DB0021B9C4 /* Default-568h@2x.png */,
 				FD77A07E0E26BDA900F39101 /* Default.png */,
@@ -268,33 +256,6 @@
 			isa = PBXGroup;
 			children = (
 				3803215C195DF10A002B40D9 /* libgambc.a */,
-			);
-			path = lib;
-			sourceTree = "<group>";
-		};
-		38294B0619815C4300E6C773 /* libpng */ = {
-			isa = PBXGroup;
-			children = (
-				38294B0719815C4300E6C773 /* include */,
-				38294B0919815C4300E6C773 /* lib */,
-			);
-			path = libpng;
-			sourceTree = "<group>";
-		};
-		38294B0719815C4300E6C773 /* include */ = {
-			isa = PBXGroup;
-			children = (
-				38294B0D19815D5600E6C773 /* pnglibconf.h */,
-				38294B0C19815CDA00E6C773 /* pngconf.h */,
-				38294B0819815C4300E6C773 /* png.h */,
-			);
-			path = include;
-			sourceTree = "<group>";
-		};
-		38294B0919815C4300E6C773 /* lib */ = {
-			isa = PBXGroup;
-			children = (
-				38294B0A19815C4300E6C773 /* libpng16.a */,
 			);
 			path = lib;
 			sourceTree = "<group>";
@@ -479,10 +440,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				FD77A07D0E26BD8C00F39101 /* Icon.png in Resources */,
-				38294B0F19815DC200E6C773 /* lambda.png in Resources */,
-				38294B14198180AC00E6C773 /* shader.fsh in Resources */,
+				3825BC3D1981D9EC007D5937 /* app.scm in Resources */,
+				3825BC6B198274BD007D5937 /* spheres in Resources */,
 				FD77A07F0E26BDA900F39101 /* Default.png in Resources */,
-				38294B15198180AC00E6C773 /* shader.vsh in Resources */,
+				3825BC6A198274BD007D5937 /* assets in Resources */,
 				385E5B26196603DB0021B9C4 /* Default-568h@2x.png in Resources */,
 				38294B021981550800E6C773 /* main-minimal.o1 in Resources */,
 			);
@@ -495,7 +456,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				38294B0419815A7700E6C773 /* png_image.c in Sources */,
 				3803219A195F2343002B40D9 /* UIDevice+Hardware.m in Sources */,
 				38032199195F2343002B40D9 /* main.c in Sources */,
 			);
