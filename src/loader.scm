@@ -39,37 +39,27 @@ end-c-lambda
  (else
   #!void))
 
-;;(SDL_Log (current-directory))
-;;(SDL_Log (object->string (directory-files)))
-
-;; Load main module dynamically
-
 (define eval-file
   (lambda (file)
     (for-each eval (with-input-from-file file read-all))))
 
 (parameterize
- ((current-directory (cond-expand (android "sdcard") (else "spheres"))))
+ ((current-directory
+   (cond-expand (android "sdcard") (else "spheres"))))
  (load "core/lib/syntax-case.o1")
  (eval-file "core/src/base-macros.scm")
  (eval-file "core/src/assert-macros.scm")
  (SDL_Log "Successfully loaded environment"))
 
 (define (update-app)
-  (if (zero? (shell-command "wget -N localhost:8000/app.scm"))
-      (load "app.scm")
-      (println "App not updated")))
+  (if (zero? (shell-command "wget -N localhost:8000/globals.scm -O assets/src/globals.scm"))
+      (load "assets/src/globals.scm")
+      (println "globals.scm could not be retrieved")))
 
-
-
-
-
-(define window #f)
-(define screen-width)
-(define screen-height)
-
-
-
+(define (update-app)
+  (if (zero? (shell-command "wget -N localhost:8000/app.scm -O assets/src/app.scm"))
+      (load "assets/src/app.scm")
+      (println "app.scm could not be retrieved")))
 
 ;; Install and run the remote REPL: IP address of the computer running the debug server
 (if (remote-repl-setup! "localhost" port: 20000)
@@ -78,7 +68,6 @@ end-c-lambda
       (SDL_Log "***** Successfully connected to Gambit Debug Server *****"))
     (SDL_Log "***** Unable to connect to Gambit Debug Server. Are you running 'sense'? *****"))
 
-(SDL_Log "***** Sleeping *****")
-
+;; Put the main thread to sleep
 (thread-sleep! +inf.0)
 
