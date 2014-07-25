@@ -51,7 +51,7 @@ end-c-lambda
  (eval-file "core/src/assert-macros.scm")
  (SDL_Log "Successfully loaded environment"))
 
-(define (update-app)
+(define (update-globals)
   (if (zero? (shell-command "wget -N localhost:8000/globals.scm -O assets/src/globals.scm"))
       (load "assets/src/globals.scm")
       (println "globals.scm could not be retrieved")))
@@ -60,6 +60,9 @@ end-c-lambda
   (if (zero? (shell-command "wget -N localhost:8000/app.scm -O assets/src/app.scm"))
       (load "assets/src/app.scm")
       (println "app.scm could not be retrieved")))
+
+(update-globals)
+(update-app)
 
 ;; Install and run the remote REPL: IP address of the computer running the debug server
 (if (remote-repl-setup! "localhost" port: 20000)
