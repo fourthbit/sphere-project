@@ -21,19 +21,22 @@
 (define perspective-matrix #f)
 (define perspective-matrix-gl #f)
 
+(define attr0 #f)
 (define attr1 #f)
 (define attr2 #f)
 
 ; Vertex coordinates for the triangle
-(define tx1 -0.25)
-(define tx2 0.25)
-(define ty1 0.25)
-(define ty2 -0.25)
+(define tx1 0.0)
+(define ty1 250.0)
+
+(define tx2 250.0)
+(define ty2 0.0)
 
 ; Vertex coordinates for the quad (two triangles)
 (define qx1 50.0)
-(define qx2 300.0)
 (define qy1 50.0)
+
+(define qx2 300.0)
 (define qy2 300.0)
 
 (define triangle-data-vector (f32vector tx1 ty1 0.0 1.0

@@ -1,13 +1,16 @@
+;;-------------------------------------------------------------------------------
+;; Utils
+
 ;; Executes the given form and checks if GL's state is valid
 (define-macro (check-gl-error exp)
   `(begin
      ,exp
      (let ((error (glGetError)))
-       (if (not (= error GL_NO_ERROR))
+       (if (= error GL_NO_ERROR)
+           #t
            (begin
              (SDL_Log (string-append "GL Error: " (object->string error) " - " (object->string ',exp)))
-             #f)
-           #t))))
+             #f)))))
 
 ;; Loads an image from the given path and creates a texture object to hold it
 (define (load-texture window path)
@@ -35,20 +38,17 @@
     (SDL_FreeSurface texture-img*)
     texture-id*))
 
-
 ;; Creates a new OpenGL VBO from a given f32vector.
-(define* (create-buffer-from-vector vertex-data-vector
-                                    (buffer-type GL_STATIC_DRAW))
+(define* (f32vector->gl-buffer vertex-data-vector
+                               (buffer-type GL_STATIC_DRAW))
   (let ((buffer-id* (alloc-GLuint* 1)))
     (glGenBuffers 1 buffer-id*)
-    (let* ((buffer-id (*->GLuint buffer-id*))
-           (vertex-data (f32vector->GLfloat* vertex-data-vector)))
-      (glBindBuffer GL_ARRAY_BUFFER buffer-id)
-      (glBufferData GL_ARRAY_BUFFER
-                    (* (f32vector-length vertex-data-vector) GLfloat-size)
-                    vertex-data
-                    GL_STATIC_DRAW)
-      (glBindBuffer GL_ARRAY_BUFFER 0))
+    (glBindBuffer GL_ARRAY_BUFFER (*->GLuint buffer-id*))
+    (glBufferData GL_ARRAY_BUFFER
+                  (* (f32vector-length vertex-data-vector) GLfloat-size)
+                  (f32vector->GLfloat* vertex-data-vector)
+                  GL_STATIC_DRAW)
+    (glBindBuffer GL_ARRAY_BUFFER 0)
     buffer-id*))
 
 ;; Draws the given vbo  with a particular program. The callback is
@@ -56,17 +56,60 @@
 (define (draw-vbo vbo-id* program-id type count attribs-callback)
   (let ((vbo-id (*->GLuint vbo-id*)))
     (glUseProgram program-id)
-    (if (check-gl-error (glBindBuffer GL_ARRAY_BUFFER vbo-id))
-        (begin
+    (when (check-gl-error (glBindBuffer GL_ARRAY_BUFFER vbo-id))
           (attribs-callback)
           (check-gl-error (glDrawArrays type 0 count))
-          (glBindBuffer GL_ARRAY_BUFFER 0)))
+          (glBindBuffer GL_ARRAY_BUFFER 0))
     (glUseProgram 0)))
 
 
+;;-------------------------------------------------------------------------------
+;; Drawing
 
-;;;;;;;;;;;;;;;;;
+(define (draw-triangle window)
+  (draw-vbo tri-vertex-id* color-program-id GL_TRIANGLES 3
+            (lambda ()
+              (check-gl-error (glUniformMatrix4fv attr0 1 GL_FALSE perspective-matrix-gl))
+              (glEnableVertexAttribArray 0)
+              (glVertexAttribPointer 0 4 GL_FLOAT GL_FALSE 0 #f))))
 
+(define (draw-sprite window)
+  (draw-vbo quad-vertex-id* tex2d-program-id GL_TRIANGLES 6
+            (lambda ()
+              (cond-expand
+               (host (glBindSampler 0 (*->GLuint sprite-sampler*)))
+               (else #!void))
+              (check-gl-error (glUniform1i attr1 0))
+              (check-gl-error (glUniformMatrix4fv attr2 1 GL_FALSE perspective-matrix-gl))
+              (glEnableVertexAttribArray 0)
+              (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
+              (glEnableVertexAttribArray 1)
+              (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) (integer->void* (* 2 GLfloat-size)))
+              (glActiveTexture GL_TEXTURE0)
+              (glBindTexture GL_TEXTURE_2D (*->GLuint sprite-id*)))))
+
+(define (draw-gui time-step window)
+  (set! ellapsed-time (+ ellapsed-time time-step))
+  (if (> ellapsed-time bkg-color-period)
+      (begin
+        (set! current-color (list (random-real) (random-real) (random-real) 1.0))
+        (set! ellapsed-time 0)))
+  (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
+  (glEnable GL_BLEND)
+  (glDisable GL_CULL_FACE)
+  (glCullFace GL_BACK)
+  (apply glClearColor current-color)
+  (glClear (bitwise-ior GL_COLOR_BUFFER_BIT))
+  (draw-triangle window)
+  (draw-sprite window))
+
+(define (draw time-step window)
+  (draw-gui time-step window)
+  (SDL_GL_SwapWindow window))
+
+
+;;-------------------------------------------------------------------------------
+;; Initialization and destruction
 
 ;; Loads the shaders and sets the location of the necessary attributes
 (define (init-shaders)
@@ -82,6 +125,9 @@
                                   (lambda (program-id)
                                     (glBindAttribLocation program-id 0 "position"))
                                   delete-shaders?: #t))
+  (glUseProgram color-program-id)
+  (check-gl-error (set! attr0 (glGetUniformLocation color-program-id "perspectiveMatrix")))
+  (glUseProgram 0)
   (set! tex2d-program-id
         (fusion:gl-create-program (list (fusion:gl-create-shader
                                          GL_VERTEX_SHADER
@@ -100,8 +146,8 @@
 
 ;; Creates VBOs from the static vectors defined at the top of the file
 (define (init-buffers)
-  (set! tri-vertex-id* (create-buffer-from-vector triangle-data-vector))
-  (set! quad-vertex-id* (create-buffer-from-vector quad-data-vector)))
+  (set! tri-vertex-id* (f32vector->gl-buffer triangle-data-vector))
+  (set! quad-vertex-id* (f32vector->gl-buffer quad-data-vector)))
 
 ;; Loads the texture used by the quad and creates a sampler if running on host
 (define (init-images window)
@@ -139,64 +185,6 @@
   (glDeleteTextures 1 sprite-id*)
   (glDeleteProgram color-program-id)
   (glDeleteProgram tex2d-program-id))
-
-(define (draw-triangle window)
-  (draw-vbo tri-vertex-id* color-program-id GL_TRIANGLES 3
-            (lambda ()
-              (glEnableVertexAttribArray 0)
-              (glVertexAttribPointer 0 4 GL_FLOAT GL_FALSE 0 #f))))
-
-(define (draw-sprite window)
-  (draw-vbo quad-vertex-id* tex2d-program-id GL_TRIANGLES 6
-            (lambda ()
-              (cond-expand
-               (host (glBindSampler 0 (*->GLuint sprite-sampler*)))
-               (else #!void))
-
-              (check-gl-error (glUniform1i attr1 0))
-              (check-gl-error (glUniformMatrix4fv attr2 1 GL_FALSE perspective-matrix-gl))
-
-              (glEnableVertexAttribArray 0)
-              (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
-              (glEnableVertexAttribArray 1)
-              (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) (integer->void* (* 2 GLfloat-size)))
-
-              (glActiveTexture GL_TEXTURE0)
-              (glBindTexture GL_TEXTURE_2D (*->GLuint sprite-id*)))))
-
-(define (draw-gui time-step window)
-  (set! ellapsed-time (+ ellapsed-time time-step))
-
-  (if (> ellapsed-time bkg-color-period)
-      (begin
-        (set! current-color (list (random-real) (random-real) (random-real) 1.0))
-        (set! ellapsed-time 0)))
-
-  (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
-  (glEnable GL_BLEND)
-
-  (glDisable GL_CULL_FACE)
-  (glCullFace GL_BACK)
-
-  (apply glClearColor current-color)
-
-  (glClear (bitwise-ior GL_COLOR_BUFFER_BIT))
-
-  (draw-triangle window)
-  (draw-sprite window))
-
-
-(define (draw time-step window)
-  (draw-gui time-step window)
-  (SDL_GL_SwapWindow window))
-
-
-
-
-;;;;;;;;;;;;;;;;;;;
-
-
-
 
 (define (get-key-code event)
   (SDL_Keysym-sym

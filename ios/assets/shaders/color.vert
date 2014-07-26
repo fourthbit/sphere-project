@@ -5,8 +5,9 @@ precision mediump int;
 
 attribute vec4 position;
 
-//uniform mat4 perspectiveMatrix;
+uniform mat4 perspectiveMatrix;
 
 void main() {
-    gl_Position = position; //perspectiveMatrix * position;
+    //gl_Position = position; //perspectiveMatrix * position;
+    gl_Position = perspectiveMatrix * position;
 }
