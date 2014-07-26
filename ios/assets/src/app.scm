@@ -67,27 +67,37 @@
 ;; Drawing
 
 (define (draw-triangle window)
-  (draw-vbo tri-vertex-id* color-program-id GL_TRIANGLES 3
+  (draw-vbo (table-ref gl-buffers 'tri-vertices)
+            (table-ref gl-programs 'color)
+            GL_TRIANGLES 3
             (lambda ()
-              (check-gl-error (glUniformMatrix4fv attr0 1 GL_FALSE perspective-matrix-gl))
+              (check-gl-error
+               (glUniformMatrix4fv (table-ref gl-uniforms 'perspective)
+                                   1 GL_FALSE gl-perspective-matrix))
               (glEnableVertexAttribArray 0)
               (glVertexAttribPointer 0 4 GL_FLOAT GL_FALSE 0 #f))))
 
 (define (draw-sprite window)
-  (draw-vbo quad-vertex-id* tex2d-program-id GL_TRIANGLES 6
+  (draw-vbo (table-ref gl-buffers 'quad-vertices)
+            (table-ref gl-programs 'tex2d)
+            GL_TRIANGLES 6
             (lambda ()
-              (cond-expand
-               (host (glBindSampler 0 (*->GLuint sprite-sampler*)))
-               (else #!void))
-              (check-gl-error (glUniform1i attr1 0))
-              (check-gl-error (glUniformMatrix4fv attr2 1 GL_FALSE perspective-matrix-gl))
+              (cond-expand (host (glBindSampler 0 (*->GLuint sprite-sampler*)))
+                           (else #!void))
+              (check-gl-error
+               (glUniform1i (table-ref gl-uniforms 'texture) 0))
+              (check-gl-error
+               (glUniformMatrix4fv (table-ref gl-uniforms 'perspective) 1 GL_FALSE gl-perspective-matrix))
               (glEnableVertexAttribArray 0)
               (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
               (glEnableVertexAttribArray 1)
               (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size)
                                      (integer->void* (* 2 GLfloat-size)))
               (glActiveTexture GL_TEXTURE0)
-              (glBindTexture GL_TEXTURE_2D (*->GLuint sprite-id*)))))
+              (glBindTexture GL_TEXTURE_2D (*->GLuint (table-ref gl-textures 'sprite1))))))
+
+(define bkg-color-period 1)
+(define current-color '(0.0 0.0 0.0 1.0))
 
 (define (draw-gui time-step window)
   (set! ellapsed-time (+ ellapsed-time time-step))
@@ -116,43 +126,51 @@
 (define (init-shaders)
   ;; Creates a new program with the given vertex and shader files paths.
   ;; A callback function to set up the attributes must be provided
-  (set! color-program-id
-        (fusion:gl-create-program (list (fusion:gl-create-shader
-                                         GL_VERTEX_SHADER
-                                         (fusion:load-text-file "assets/shaders/color.vert"))
-                                        (fusion:gl-create-shader
-                                         GL_FRAGMENT_SHADER
-                                         (fusion:load-text-file "assets/shaders/color.frag")))
-                                  (lambda (program-id)
-                                    (glBindAttribLocation program-id 0 "position"))
-                                  delete-shaders?: #t))
-  (glUseProgram color-program-id)
-  (check-gl-error (set! attr0 (glGetUniformLocation color-program-id "perspectiveMatrix")))
-  (glUseProgram 0)
-  (set! tex2d-program-id
-        (fusion:gl-create-program (list (fusion:gl-create-shader
-                                         GL_VERTEX_SHADER
-                                         (fusion:load-text-file "assets/shaders/tex2d.vert"))
-                                        (fusion:gl-create-shader
-                                         GL_FRAGMENT_SHADER
-                                         (fusion:load-text-file "assets/shaders/tex2d.frag")))
-                                  (lambda (program-id)
-                                    (glBindAttribLocation program-id 0 "position")
-                                    (glBindAttribLocation program-id 1 "texCoord"))
-                                  delete-shaders?: #t))
-  (glUseProgram tex2d-program-id)
-  (check-gl-error (set! attr1 (glGetUniformLocation tex2d-program-id "colorTexture")))
-  (check-gl-error (set! attr2 (glGetUniformLocation tex2d-program-id "perspectiveMatrix")))
-  (glUseProgram 0))
+  (let ((color-program-id
+         (fusion:gl-create-program (list (fusion:gl-create-shader
+                                          GL_VERTEX_SHADER
+                                          (fusion:load-text-file "assets/shaders/color.vert"))
+                                         (fusion:gl-create-shader
+                                          GL_FRAGMENT_SHADER
+                                          (fusion:load-text-file "assets/shaders/color.frag")))
+                                   (lambda (program-id)
+                                     (glBindAttribLocation program-id 0 "position"))
+                                   delete-shaders?: #t)))
+    (table-set! gl-programs 'color color-program-id)
+    (glUseProgram color-program-id)
+    (check-gl-error
+     (table-set! gl-uniforms 'perspective
+                 (glGetUniformLocation color-program-id "perspectiveMatrix")))
+    (glUseProgram 0))
+  (let ((tex2d-program-id
+         (fusion:gl-create-program (list (fusion:gl-create-shader
+                                          GL_VERTEX_SHADER
+                                          (fusion:load-text-file "assets/shaders/tex2d.vert"))
+                                         (fusion:gl-create-shader
+                                          GL_FRAGMENT_SHADER
+                                          (fusion:load-text-file "assets/shaders/tex2d.frag")))
+                                   (lambda (program-id)
+                                     (glBindAttribLocation program-id 0 "position")
+                                     (glBindAttribLocation program-id 1 "texCoord"))
+                                   delete-shaders?: #t)))
+    (table-set! gl-programs 'tex2d tex2d-program-id)
+    (glUseProgram tex2d-program-id)
+    (check-gl-error
+     (table-set! gl-uniforms 'texture
+                 (glGetUniformLocation tex2d-program-id "colorTexture")))
+    (check-gl-error
+     (table-set! gl-uniforms 'perspective (glGetUniformLocation tex2d-program-id "perspectiveMatrix")))
+    (glUseProgram 0)))
 
 ;; Creates VBOs from the static vectors defined at the top of the file
 (define (init-buffers)
-  (set! tri-vertex-id* (f32vector->gl-buffer triangle-data-vector))
-  (set! quad-vertex-id* (f32vector->gl-buffer quad-data-vector)))
+  (table-set! gl-buffers 'tri-vertices (f32vector->gl-buffer triangle-data-vector))
+  (table-set! gl-buffers 'quad-vertices (f32vector->gl-buffer quad-data-vector)))
 
 ;; Loads the texture used by the quad and creates a sampler if running on host
 (define (init-images window)
-  (set! sprite-id* (load-texture->gl-texture window "assets/images/lambda.png"))
+  (table-set! gl-textures 'sprite1
+              (load-texture->gl-texture window "assets/images/lambda.png"))
   ;; Sampler
   (cond-expand
    (host (glGenSamplers 1 sprite-sampler*)
@@ -170,7 +188,7 @@
                                                  (/ -2.0 screen-height)
                                                  1.0)
                             (make-identity-matrix))))
-  (set! perspective-matrix-gl (matrix->GLfloat*
+  (set! gl-perspective-matrix (matrix->GLfloat*
                                (matrix:map exact->inexact
                                            perspective-matrix))))
 
@@ -182,11 +200,9 @@
   (init-images window))
 
 (define (destroy-gui)
-  (glDeleteBuffers 1 tri-vertex-id*)
-  (glDeleteBuffers 1 quad-vertex-id*)
-  (glDeleteTextures 1 sprite-id*)
-  (glDeleteProgram color-program-id)
-  (glDeleteProgram tex2d-program-id))
+  (table-for-each (lambda (buffer) (glDeleteBuffers 1 buffer)) gl-buffers)
+  (table-for-each (lambda (buffer) (glDeleteTextures 1 buffer)) gl-textures)
+  (table-for-each glDeleteProgram gl-programs))
 
 (define (get-key-code event)
   (SDL_Keysym-sym

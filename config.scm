@@ -4,9 +4,9 @@
   (load
    (energy: remote/debuggee)
    (opengl: gl-es2)
-   (math: matrix)
    (sdl2: sdl2)
    (sdl2: sdl2-image)
+   (math: matrix)
    (fusion: core)))
  (main-minimal
   (load

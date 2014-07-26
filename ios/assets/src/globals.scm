@@ -1,36 +1,42 @@
+;;-------------------------------------------------------------------------------
 ;; SDL
 
 (define window #f)
-(define screen-width)
-(define screen-height)
+(define screen-width #f)
+(define screen-height #f)
 
+;;-------------------------------------------------------------------------------
 ;; OpenGL
 
-(define color-program-id #f)
-(define tex2d-program-id #f)
+;; Matrices
+(define perspective-matrix #f)
+(define gl-perspective-matrix #f)
 
-(define tri-vertex-id* #f)
-(define quad-vertex-id* #f)
+;; Shader programs
+(define gl-programs (make-table))
 
-(define sprite-id* #f)
+;; Buffers
+(define gl-buffers (make-table))
+
+;; Textures
+(define gl-textures (make-table))
 (cond-expand
- (host
-  (define sprite-sampler* (alloc-GLuint* 1)))
+ (host (define sprite-sampler* (alloc-GLuint* 1)))
  (else #!void))
 
-(define perspective-matrix #f)
-(define perspective-matrix-gl #f)
+;; Uniform variables
+(define gl-uniforms (make-table))
 
-(define attr0 #f)
-(define attr1 #f)
-(define attr2 #f)
+
+
+
 
 ; Vertex coordinates for the triangle
 (define tx1 0.0)
-(define ty1 250.0)
+(define ty1 0.0)
 
-(define tx2 250.0)
-(define ty2 0.0)
+(define tx2 640.0)
+(define ty2 320.0)
 
 ; Vertex coordinates for the quad (two triangles)
 (define qx1 50.0)
@@ -51,12 +57,10 @@
                                     qx1 qy2 0.0 1.0
                                     qx2 qy2 1.0 1.0))
 
-;; Main
+;;-------------------------------------------------------------------------------
+;; Application life cycle
 
 (define ellapsed-time 0)
-(define bkg-color-period 1)
-(define current-color '(0.0 0.0 0.0 1.0))
-
 (define current-ticks 0)
 (define previous-ticks 0)
 (define time-step 0)
