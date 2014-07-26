@@ -35,22 +35,10 @@
     (SDL_FreeSurface texture-img*)
     texture-id*))
 
-;; Creates a new program with the given vertex and shader files paths.
-;; A callback function to set up the attributes must be provided
-(define (create-program vertex-shader fragment-shader callback)
-  (let* ((shaders
-          (list (fusion:gl-create-shader
-                 GL_VERTEX_SHADER
-                 (fusion:load-text-file (string-append "assets/shaders/" vertex-shader)))
-                (fusion:gl-create-shader
-                 GL_FRAGMENT_SHADER
-                 (fusion:load-text-file (string-append "assets/shaders/" fragment-shader)))))
-         (program-id (fusion:gl-create-program shaders callback)))
-    (for-each glDeleteShader shaders)
-    program-id))
 
 ;; Creates a new OpenGL VBO from a given f32vector.
-(define* (create-buffer-from-vector vertex-data-vector (buffer-type GL_STATIC_DRAW))
+(define* (create-buffer-from-vector vertex-data-vector
+                                    (buffer-type GL_STATIC_DRAW))
   (let ((buffer-id* (alloc-GLuint* 1)))
     (glGenBuffers 1 buffer-id*)
     (let* ((buffer-id (*->GLuint buffer-id*))
@@ -82,17 +70,29 @@
 
 ;; Loads the shaders and sets the location of the necessary attributes
 (define (init-shaders)
+  ;; Creates a new program with the given vertex and shader files paths.
+  ;; A callback function to set up the attributes must be provided
   (set! color-program-id
-        (create-program "color.vert"
-                        "color.frag"
-                        (lambda (program-id)
-                          (glBindAttribLocation program-id 0 "position"))))
+        (fusion:gl-create-program (list (fusion:gl-create-shader
+                                         GL_VERTEX_SHADER
+                                         (fusion:load-text-file "assets/shaders/color.vert"))
+                                        (fusion:gl-create-shader
+                                         GL_FRAGMENT_SHADER
+                                         (fusion:load-text-file "assets/shaders/color.frag")))
+                                  (lambda (program-id)
+                                    (glBindAttribLocation program-id 0 "position"))
+                                  delete-shaders?: #t))
   (set! tex2d-program-id
-        (create-program "tex2d.vert"
-                        "tex2d.frag"
-                        (lambda (program-id)
-                          (glBindAttribLocation program-id 0 "position")
-                          (glBindAttribLocation program-id 1 "texCoord"))))
+        (fusion:gl-create-program (list (fusion:gl-create-shader
+                                         GL_VERTEX_SHADER
+                                         (fusion:load-text-file "assets/shaders/tex2d.vert"))
+                                        (fusion:gl-create-shader
+                                         GL_FRAGMENT_SHADER
+                                         (fusion:load-text-file "assets/shaders/tex2d.frag")))
+                                  (lambda (program-id)
+                                    (glBindAttribLocation program-id 0 "position")
+                                    (glBindAttribLocation program-id 1 "texCoord"))
+                                  delete-shaders?: #t))
   (glUseProgram tex2d-program-id)
   (check-gl-error (set! attr1 (glGetUniformLocation tex2d-program-id "colorTexture")))
   (check-gl-error (set! attr2 (glGetUniformLocation tex2d-program-id "perspectiveMatrix")))
@@ -244,7 +244,8 @@
     (set! screen-width (SDL_DisplayMode-w mode*))
     (set! screen-height (SDL_DisplayMode-h mode*))
     (set! window
-          (SDL_CreateWindow "SDL/GL" SDL_WINDOWPOS_CENTERED SDL_WINDOWPOS_CENTERED screen-width screen-height
+          (SDL_CreateWindow "SDL/GL" SDL_WINDOWPOS_CENTERED SDL_WINDOWPOS_CENTERED
+                            screen-width screen-height
                             (bitwise-ior SDL_WINDOW_OPENGL SDL_WINDOW_RESIZABLE SDL_WINDOW_BORDERLESS)))
     (unless window (fusion:error "Unable to create render window" (SDL_GetError)))
     ;; OpenGL/ES context
@@ -258,10 +259,6 @@
     (glScissor 0 0 screen-width screen-height)
     ;; Init GUI
     (init-gui window screen-width screen-height)))
-
-(define current-ticks 0)
-(define previous-ticks 0)
-(define time-step 0)
 
 (define (test)
   (let ((event (alloc-SDL_Event))

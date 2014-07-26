@@ -1,11 +1,10 @@
+;; SDL
+
 (define window #f)
 (define screen-width)
 (define screen-height)
 
-
-(define ellapsed-time 0)
-(define bkg-color-period 1)
-(define current-color '(0.0 0.0 0.0 1.0))
+;; OpenGL
 
 (define color-program-id #f)
 (define tex2d-program-id #f)
@@ -48,3 +47,13 @@
                                     qx2 qy1 1.0 0.0
                                     qx1 qy2 0.0 1.0
                                     qx2 qy2 1.0 1.0))
+
+;; Main
+
+(define ellapsed-time 0)
+(define bkg-color-period 1)
+(define current-color '(0.0 0.0 0.0 1.0))
+
+(define current-ticks 0)
+(define previous-ticks 0)
+(define time-step 0)
