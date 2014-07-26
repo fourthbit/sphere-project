@@ -13,7 +13,7 @@
              #f)))))
 
 ;; Loads an image from the given path and creates a texture object to hold it
-(define (load-texture window path)
+(define (load-texture->gl-texture window path)
   (let* ((texture-img* (IMG_Load path)) ;; default format: ARGB8888
          (texture-id* (alloc-GLuint* 1)))
     ;; Alternative method (using GL_RGBA). Remember that PixelFormat is backwards in SDL
@@ -51,7 +51,7 @@
     (glBindBuffer GL_ARRAY_BUFFER 0)
     buffer-id*))
 
-;; Draws the given vbo  with a particular program. The callback is
+;; Draws the given vbo with a particular program. The callback is
 ;; used to set up the attributes of the dynamic attributes
 (define (draw-vbo vbo-id* program-id type count attribs-callback)
   (let ((vbo-id (*->GLuint vbo-id*)))
@@ -84,7 +84,8 @@
               (glEnableVertexAttribArray 0)
               (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
               (glEnableVertexAttribArray 1)
-              (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) (integer->void* (* 2 GLfloat-size)))
+              (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size)
+                                     (integer->void* (* 2 GLfloat-size)))
               (glActiveTexture GL_TEXTURE0)
               (glBindTexture GL_TEXTURE_2D (*->GLuint sprite-id*)))))
 
@@ -151,7 +152,7 @@
 
 ;; Loads the texture used by the quad and creates a sampler if running on host
 (define (init-images window)
-  (set! sprite-id* (load-texture window "assets/images/lambda.png"))
+  (set! sprite-id* (load-texture->gl-texture window "assets/images/lambda.png"))
   ;; Sampler
   (cond-expand
    (host (glGenSamplers 1 sprite-sampler*)
@@ -166,7 +167,8 @@
   (set! perspective-matrix
         (matrix:* (make-translation-matrix -1.0 1.0 0.0)
                   (matrix:* (make-scaling-matrix (/ 2.0 screen-width)
-                                                 (/ -2.0 screen-height) 1.0)
+                                                 (/ -2.0 screen-height)
+                                                 1.0)
                             (make-identity-matrix))))
   (set! perspective-matrix-gl (matrix->GLfloat*
                                (matrix:map exact->inexact
@@ -260,7 +262,6 @@
                   ((resize-event? event)
                    (let ((resize (SDL_Event-window event)))
                      (resize-gui (SDL_WindowEvent-data1 resize) (SDL_WindowEvent-data2 resize)))))))
-
     (set! current-ticks (SDL_GetTicks))
     (set! time-step (/ (- current-ticks previous-ticks) 1000.0))
     (set! previous-ticks current-ticks)
