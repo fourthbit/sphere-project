@@ -20,7 +20,7 @@
  (else #!void))
 
 (define perspective-matrix #f)
-(define float-matrix #f)
+(define perspective-matrix-gl #f)
 
 (define attr1 #f)
 (define attr2 #f)

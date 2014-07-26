@@ -78,4 +78,3 @@ end-c-lambda
 
 ;; Put the main thread to sleep
 (thread-sleep! +inf.0)
-

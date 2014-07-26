@@ -111,6 +111,8 @@
                                 verbose: #t))))
 
 (define-task ios:run ()
+  ;; First kill the running instance of the iPhone simulator
+  (shell-command "killall -9 iPhone\\ Simulator")
   (parameterize
    ((current-directory (ios-directory)))
    (shell-command

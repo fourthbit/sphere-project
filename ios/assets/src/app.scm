@@ -35,18 +35,17 @@
     (SDL_FreeSurface texture-img*)
     texture-id*))
 
-;; Loads a shader using the given relative path
-(define (load-shader path)
-  (fusion:load-text-file (string-append "assets/shaders/" path)))
-
 ;; Creates a new program with the given vertex and shader files paths.
 ;; A callback function to set up the attributes must be provided
 (define (create-program vertex-shader fragment-shader callback)
-  (let* ((shaders (list (fusion:create-shader GL_VERTEX_SHADER
-                                              (load-shader vertex-shader))
-                        (fusion:create-shader GL_FRAGMENT_SHADER
-                                              (load-shader fragment-shader))))
-         (program-id (fusion:create-program shaders callback)))
+  (let* ((shaders
+          (list (fusion:gl-create-shader
+                 GL_VERTEX_SHADER
+                 (fusion:load-text-file (string-append "assets/shaders/" vertex-shader)))
+                (fusion:gl-create-shader
+                 GL_FRAGMENT_SHADER
+                 (fusion:load-text-file (string-append "assets/shaders/" fragment-shader)))))
+         (program-id (fusion:gl-create-program shaders callback)))
     (for-each glDeleteShader shaders)
     program-id))
 
@@ -123,9 +122,9 @@
                   (matrix:* (make-scaling-matrix (/ 2.0 screen-width)
                                                  (/ -2.0 screen-height) 1.0)
                             (make-identity-matrix))))
-  (set! float-matrix (matrix->GLfloat*
-                      (matrix:map exact->inexact
-                                  perspective-matrix))))
+  (set! perspective-matrix-gl (matrix->GLfloat*
+                               (matrix:map exact->inexact
+                                           perspective-matrix))))
 
 ;; Initializes the required components for drawing
 (define (init-gui window screen-width screen-height)
@@ -155,7 +154,7 @@
                (else #!void))
 
               (check-gl-error (glUniform1i attr1 0))
-              (check-gl-error (glUniformMatrix4fv attr2 1 GL_FALSE float-matrix))
+              (check-gl-error (glUniformMatrix4fv attr2 1 GL_FALSE perspective-matrix-gl))
 
               (glEnableVertexAttribArray 0)
               (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
@@ -271,6 +270,8 @@
       (when (= 1 (SDL_PollEvent event))
             (cond ((exit-application? event)
                    (set! exit-app #t))
+                  ((click-action? event)
+                   (SDL_Log "CLICK!"))
                   ((resize-event? event)
                    (let ((resize (SDL_Event-window event)))
                      (resize-gui (SDL_WindowEvent-data1 resize) (SDL_WindowEvent-data2 resize)))))))
