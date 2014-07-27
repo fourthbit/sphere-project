@@ -36,7 +36,7 @@
 (define ty1 0.0)
 
 (define tx2 640.0)
-(define ty2 320.0)
+(define ty2 960.0)
 
 ; Vertex coordinates for the quad (two triangles)
 (define qx1 50.0)
@@ -58,7 +58,7 @@
                                     qx2 qy2 1.0 1.0))
 
 ;;-------------------------------------------------------------------------------
-;; Application life cycle
+;; Time
 
 (define ellapsed-time 0)
 (define current-ticks 0)

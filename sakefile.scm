@@ -132,10 +132,10 @@
     ;; Kill asset server when leaving simulator
     (let ((kill-server (open-process
                         (list path: "kill"
-                              arguments: '("-15" (number->string server-pid)))))
+                              arguments: `("-15" ,(number->string server-pid)))))
           (kill-simulator (open-process
                            (list path: "kill"
-                                 arguments: '("-9" (number->string simulator-pid))))))
+                                 arguments: `("-9" ,(number->string simulator-pid))))))
       (process-status kill-server)
       (process-status kill-simulator))))
 

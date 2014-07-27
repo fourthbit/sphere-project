@@ -64,9 +64,56 @@
 
 
 ;;-------------------------------------------------------------------------------
+;; Events
+
+(define (get-key-code event)
+  (SDL_Keysym-sym
+   (SDL_KeyboardEvent-keysym
+    (SDL_Event-key event))))
+
+(define (resize-event? event)
+  (and
+   (= SDL_WINDOWEVENT (SDL_Event-type event))
+   (or (= SDL_WINDOWEVENT_SIZE_CHANGED (SDL_WindowEvent-event (SDL_Event-window event)))
+       (= SDL_WINDOWEVENT_RESIZED (SDL_WindowEvent-event (SDL_Event-window event))))))
+
+(define (click-action? event)
+  (or (= SDL_FINGERDOWN (SDL_Event-type event))
+      (= SDL_MOUSEBUTTONDOWN (SDL_Event-type event))))
+
+(define (exit-application? event)
+  (or (= SDL_QUIT (SDL_Event-type event))
+      (and
+       (= SDL_KEYUP (SDL_Event-type event))
+       (or (= (get-key-code event) SDLK_ESCAPE)
+           (= (get-key-code event) SDLK_AC_BACK)))))
+
+;; TODO: decouple form art
+(define (handle-events!)
+  (let ((event (alloc-SDL_Event)))
+    (let ev-poll ()
+      (when (= 1 (SDL_PollEvent event))
+            (cond ((exit-application? event)
+                   (SDL_Quit))
+                  ((click-action? event)
+                   (SDL_Log "CLICK!"))
+                  ((resize-event? event)
+                   (let ((resize (SDL_Event-window event)))
+                     (resize-graphics! (SDL_WindowEvent-data1 resize)
+                                       (SDL_WindowEvent-data2 resize)))))
+            'continue))))
+
+
+;;-------------------------------------------------------------------------------
+;; Application World
+
+(define (update-world world)
+  world)
+
+;;-------------------------------------------------------------------------------
 ;; Drawing
 
-(define (draw-triangle window)
+(define (draw-triangle)
   (draw-vbo (table-ref gl-buffers 'tri-vertices)
             (table-ref gl-programs 'color)
             GL_TRIANGLES 3
@@ -75,9 +122,9 @@
                (glUniformMatrix4fv (table-ref gl-uniforms 'perspective)
                                    1 GL_FALSE gl-perspective-matrix))
               (glEnableVertexAttribArray 0)
-              (glVertexAttribPointer 0 4 GL_FLOAT GL_FALSE 0 #f))))
+              (glVertexAttribPointer 0 4 GL_FLOAT GL_TRUE 0 #f))))
 
-(define (draw-sprite window)
+(define (draw-sprite)
   (draw-vbo (table-ref gl-buffers 'quad-vertices)
             (table-ref gl-programs 'tex2d)
             GL_TRIANGLES 6
@@ -96,34 +143,22 @@
               (glActiveTexture GL_TEXTURE0)
               (glBindTexture GL_TEXTURE_2D (*->GLuint (table-ref gl-textures 'sprite1))))))
 
-(define bkg-color-period 1)
-(define current-color '(0.0 0.0 0.0 1.0))
-
-(define (draw-gui time-step window)
-  (set! ellapsed-time (+ ellapsed-time time-step))
-  (if (> ellapsed-time bkg-color-period)
-      (begin
-        (set! current-color (list (random-real) (random-real) (random-real) 1.0))
-        (set! ellapsed-time 0)))
+(define (draw world)
   (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
   (glEnable GL_BLEND)
   (glDisable GL_CULL_FACE)
   (glCullFace GL_BACK)
   (apply glClearColor current-color)
   (glClear (bitwise-ior GL_COLOR_BUFFER_BIT))
-  (draw-triangle window)
-  (draw-sprite window))
-
-(define (draw time-step window)
-  (draw-gui time-step window)
+  (draw-triangle)
+  (draw-sprite)
   (SDL_GL_SwapWindow window))
 
-
 ;;-------------------------------------------------------------------------------
-;; Initialization and destruction
+;; App life cycle
 
 ;; Loads the shaders and sets the location of the necessary attributes
-(define (init-shaders)
+(define (init-shaders!)
   ;; Creates a new program with the given vertex and shader files paths.
   ;; A callback function to set up the attributes must be provided
   (let ((color-program-id
@@ -162,13 +197,12 @@
      (table-set! gl-uniforms 'perspective (glGetUniformLocation tex2d-program-id "perspectiveMatrix")))
     (glUseProgram 0)))
 
-;; Creates VBOs from the static vectors defined at the top of the file
-(define (init-buffers)
-  (table-set! gl-buffers 'tri-vertices (f32vector->gl-buffer triangle-data-vector))
-  (table-set! gl-buffers 'quad-vertices (f32vector->gl-buffer quad-data-vector)))
+;; Initialize the OpenGL buffers
+(define (init-buffers!)
+  (update-buffers!))
 
 ;; Loads the texture used by the quad and creates a sampler if running on host
-(define (init-images window)
+(define (init-textures! window)
   (table-set! gl-textures 'sprite1
               (load-texture->gl-texture window "assets/images/lambda.png"))
   ;; Sampler
@@ -181,7 +215,17 @@
            (glSamplerParameteri sampler-id GL_TEXTURE_MIN_FILTER GL_NEAREST)))
    (else #!void)))
 
-(define (resize-gui screen-width screen-height)
+;; Initializes the graphic system
+(define (init-graphics!)
+  (resize-graphics! screen-width screen-height)
+  (init-shaders!)
+  (init-buffers!)
+  (init-textures! window))
+
+;; Handle window resizing and orientation
+(define (resize-graphics! screen-width screen-height)
+  (set! screen-width screen-width)
+  (set! screen-height screen-height)
   (set! perspective-matrix
         (matrix:* (make-translation-matrix -1.0 1.0 0.0)
                   (matrix:* (make-scaling-matrix (/ 2.0 screen-width)
@@ -192,41 +236,33 @@
                                (matrix:map exact->inexact
                                            perspective-matrix))))
 
-;; Initializes the required components for drawing
-(define (init-gui window screen-width screen-height)
-  (resize-gui screen-width screen-height)
-  (init-shaders)
-  (init-buffers)
-  (init-images window))
+;; Updates VBOs from the static vectors defined at the top of the file
+(define (update-buffers!)
+  (table-set! gl-buffers 'tri-vertices (f32vector->gl-buffer triangle-data-vector))
+  (table-set! gl-buffers 'quad-vertices (f32vector->gl-buffer quad-data-vector)))
 
-(define (destroy-gui)
+;; Tear down all OpenGL structures
+(define (destroy-graphics!)
   (table-for-each (lambda (buffer) (glDeleteBuffers 1 buffer)) gl-buffers)
+  (set! gl-buffers (make-table))
   (table-for-each (lambda (buffer) (glDeleteTextures 1 buffer)) gl-textures)
-  (table-for-each glDeleteProgram gl-programs))
+  (set! gl-textures (make-table))
+  (table-for-each glDeleteProgram gl-programs)
+  (set! gl-programs (make-table)))
 
-(define (get-key-code event)
-  (SDL_Keysym-sym
-   (SDL_KeyboardEvent-keysym
-    (SDL_Event-key event))))
+;;-------------------------------------------------------------------------------
+;; Application life cycle
 
-(define (resize-event? event)
-  (and
-   (= SDL_WINDOWEVENT (SDL_Event-type event))
-   (or (= SDL_WINDOWEVENT_SIZE_CHANGED (SDL_WindowEvent-event (SDL_Event-window event)))
-       (= SDL_WINDOWEVENT_RESIZED (SDL_WindowEvent-event (SDL_Event-window event))))))
+;; Single command for running the app and initializing if necessary
+(define (run!)
+  (when (zero? (SDL_WasInit 0))
+        (init-app!))
+  (handle-events!)
+  (update-app!)
+  (draw (update-world '())))
 
-(define (click-action? event)
-  (or (= SDL_FINGERDOWN (SDL_Event-type event))
-      (= SDL_MOUSEBUTTONDOWN (SDL_Event-type event))))
-
-(define (exit-application? event)
-  (or (= SDL_QUIT (SDL_Event-type event))
-      (and
-       (= SDL_KEYUP (SDL_Event-type event))
-       (or (= (get-key-code event) SDLK_ESCAPE)
-           (= (get-key-code event) SDLK_AC_BACK)))))
-
-(define (init-app)
+;; Initializes the App
+(define (init-app!)
   (let ((mode* (alloc-SDL_DisplayMode))
         (flags-sdl (bitwise-ior SDL_INIT_VIDEO SDL_INIT_AUDIO))
         (flags-img (bitwise-ior IMG_INIT_JPG IMG_INIT_PNG)))
@@ -245,14 +281,21 @@
     (SDL_GL_SetAttribute SDL_GL_GREEN_SIZE 8)
     (SDL_GL_SetAttribute SDL_GL_BLUE_SIZE 8)
     (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
-    ;; Get screen size
+    ;; Get screen size, Portrait orientation by default
     (SDL_GetDisplayMode 0 0 mode*)
-    (set! screen-width (SDL_DisplayMode-w mode*))
-    (set! screen-height (SDL_DisplayMode-h mode*))
+    (let* ((reported-width (SDL_DisplayMode-w mode*))
+           (reported-height (SDL_DisplayMode-h mode*))
+           (width (min reported-width reported-height))
+           (height (max reported-width reported-height)))
+      (set! screen-width width)
+      (set! screen-height height))
     (set! window
           (SDL_CreateWindow "SDL/GL" SDL_WINDOWPOS_CENTERED SDL_WINDOWPOS_CENTERED
                             screen-width screen-height
-                            (bitwise-ior SDL_WINDOW_OPENGL SDL_WINDOW_RESIZABLE SDL_WINDOW_BORDERLESS)))
+                            (bitwise-ior SDL_WINDOW_OPENGL
+                                         SDL_WINDOW_RESIZABLE
+                                         SDL_WINDOW_BORDERLESS
+                                         SDL_WINDOW_ALLOW_HIGHDPI)))
     (unless window (fusion:error "Unable to create render window" (SDL_GetError)))
     ;; OpenGL/ES context
     (let ((ctx (SDL_GL_CreateContext window)))
@@ -263,34 +306,26 @@
     ;; OpenGL viewport
     (glViewport 0 0 screen-width screen-height)
     (glScissor 0 0 screen-width screen-height)
-    ;; Init GUI
-    (init-gui window screen-width screen-height)))
+    (init-graphics!)))
 
-(define (test)
-  (let ((event (alloc-SDL_Event))
-        (exit-app #f))
-    (let ev-poll ()
-      (when (= 1 (SDL_PollEvent event))
-            (cond ((exit-application? event)
-                   (set! exit-app #t))
-                  ((click-action? event)
-                   (SDL_Log "CLICK!"))
-                  ((resize-event? event)
-                   (let ((resize (SDL_Event-window event)))
-                     (resize-gui (SDL_WindowEvent-data1 resize) (SDL_WindowEvent-data2 resize)))))))
-    (set! current-ticks (SDL_GetTicks))
-    (set! time-step (/ (- current-ticks previous-ticks) 1000.0))
-    (set! previous-ticks current-ticks)
-    (draw time-step window)
-    ;;(free event)
-    ))
+;; Update global variables
+(define bkg-color-period 1) ;; TODO: REMOVE
+(define current-color '(0.0 0.0 0.0 1.0))
 
-(define (quit-app)
-  (destroy-gui)
+;; Update App system and globals
+(define (update-app!)
+  (set! current-ticks (SDL_GetTicks))
+  (set! time-step (/ (- current-ticks previous-ticks) 1000.0))
+  ;; TODO: REMOVE
+  (set! ellapsed-time (+ ellapsed-time time-step))
+  (set! previous-ticks current-ticks)
+  (when (> ellapsed-time bkg-color-period)
+        (set! current-color (list (random-real) (random-real) (random-real) 1.0))
+        (set! ellapsed-time 0)))
+
+;; Cleanup resources and quit the application
+(define (quit-app!)
+  (destroy-graphics!)
   (SDL_DestroyWindow window)
   (SDL_Quit)
   (exit))
-
-(define (run)
-  (init-app)
-  (test))
