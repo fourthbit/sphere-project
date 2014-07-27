@@ -305,6 +305,29 @@
   (handle-events)
   (draw (update-world '())))
 
+;; Application main loop
+;; TODO
+(define (run-loop!)
+  (when (zero? (SDL_WasInit 0))
+        (init-app!))
+  (cond-expand
+   (ios
+    (SDL_iPhoneSetAnimationCallback window 1 *sdl-ios-animation-callback-proxy* #f)
+    (sdl-ios-animation-callback-set!
+     (let ((world '()))
+       (lambda (params)
+         (update-app!)
+         (handle-events)
+         (set! world (update-world))
+         (draw world)))))
+   (else
+    (let loop ((world '()))
+      (update-app!)
+      (handle-events)
+      (let ((new-world (update-world world)))
+        (draw new-world)
+        (loop new-world))))))
+
 ;; Initializes the App
 (define (init-app!)
   (let ((mode* (alloc-SDL_DisplayMode))

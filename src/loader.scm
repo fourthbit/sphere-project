@@ -1,3 +1,5 @@
+;; TODO: look for the right place
+
 (cond-expand
  ;; Android platform
  (android
@@ -45,6 +47,15 @@ end-c-lambda
 (define eval-file
   (lambda (file)
     (for-each eval (with-input-from-file file read-all))))
+
+
+
+
+
+
+
+
+
 
 ;; Sphere environment
 (parameterize
