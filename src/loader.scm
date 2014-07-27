@@ -52,10 +52,10 @@ end-c-lambda
     (SDL_Log "SDL Events Filter is not set")
     1))
 
-(define (set-current-sdl-events-filter! proc)
+(define (sdl-events-filter-set! proc)
   (set! *current-sdl-events-filter* proc))
 
-(c-define (default-sdl-events-handler userdata event)
+(c-define (*sdl-events-filter-proxy* userdata event)
           (void* SDL_Event*) int "SDL_default_events_handler" ""
           (*current-sdl-events-filter* userdata event))
 

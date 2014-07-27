@@ -53,8 +53,8 @@
             (ev-poll)))))
 
 (define (init-events!)
-  (SDL_SetEventFilter default-sdl-events-handler #f)
-  (set-current-sdl-events-filter!
+  (SDL_SetEventFilter *sdl-events-filter-proxy* #f)
+  (sdl-events-filter-set!
    (lambda (userdata event)
      (let ((event-type (SDL_Event-type event)))
        (cond ((= SDL_APP_TERMINATING event-type)
