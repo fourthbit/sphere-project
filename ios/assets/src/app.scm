@@ -137,7 +137,7 @@
   (SDL_GL_SwapWindow window))
 
 ;;-------------------------------------------------------------------------------
-;; App life cycle
+;; Graphics
 
 ;; Loads the shaders and sets the location of the necessary attributes
 (define (init-shaders!)
@@ -231,70 +231,6 @@
   (set! gl-textures (make-table)))
 
 ;;-------------------------------------------------------------------------------
-;; Utils
-
-;; Executes the given form and checks if GL's state is valid
-(define-macro (check-gl-error exp)
-  `(begin
-     ,exp
-     (let ((error (glGetError)))
-       (if (= error GL_NO_ERROR)
-           #t
-           (begin
-             (SDL_Log (string-append "GL Error: " (object->string error) " - " (object->string ',exp)))
-             #f)))))
-
-;; Loads an image from the given path and creates a texture object to hold it
-(define (load-texture->gl-texture window path)
-  (let* ((texture-img* (IMG_Load path)) ;; default format: ARGB8888
-         (texture-id* (alloc-GLuint* 1)))
-    ;; Alternative method (using GL_RGBA). Remember that PixelFormat is backwards in SDL
-    ;; (SDL_ConvertSurfaceFormat texture-img-unformatted* SDL_PIXELFORMAT_ABGR8888 0)
-    ;; Generate and bind texture
-    (glGenTextures 1 texture-id*)
-    (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
-    ;; Check errors
-    (check-gl-error
-     (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA ; internal format
-                   (SDL_Surface-w texture-img*) (SDL_Surface-h texture-img*)
-                   0 GL_BGRA_EXT GL_UNSIGNED_BYTE
-                   (SDL_Surface-pixels texture-img*)))
-    ;; FILTER: Necessary for NPOT textures in GLES2
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
-    ;; WRAP: Necessary for NPOT textures in GLES2
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
-    ;; Unbind and free the surface
-    (glBindTexture GL_TEXTURE_2D 0)
-    (SDL_FreeSurface texture-img*)
-    texture-id*))
-
-;; Creates a new OpenGL VBO from a given f32vector.
-(define* (f32vector->gl-buffer vertex-data-vector
-                               (buffer-type GL_STATIC_DRAW))
-  (let ((buffer-id* (alloc-GLuint* 1)))
-    (glGenBuffers 1 buffer-id*)
-    (glBindBuffer GL_ARRAY_BUFFER (*->GLuint buffer-id*))
-    (glBufferData GL_ARRAY_BUFFER
-                  (* (f32vector-length vertex-data-vector) GLfloat-size)
-                  (f32vector->GLfloat* vertex-data-vector)
-                  GL_STATIC_DRAW)
-    (glBindBuffer GL_ARRAY_BUFFER 0)
-    buffer-id*))
-
-;; Draws the given vbo with a particular program. The callback is
-;; used to set up the attributes of the dynamic attributes
-(define (draw-vbo vbo-id* program-id type count attribs-callback)
-  (let ((vbo-id (*->GLuint vbo-id*)))
-    (glUseProgram program-id)
-    (when (check-gl-error (glBindBuffer GL_ARRAY_BUFFER vbo-id))
-          (attribs-callback)
-          (check-gl-error (glDrawArrays type 0 count))
-          (glBindBuffer GL_ARRAY_BUFFER 0))
-    (glUseProgram 0)))
-
-;;-------------------------------------------------------------------------------
 ;; Application life cycle
 
 ;; Single command for running the app and initializing if necessary
@@ -335,7 +271,7 @@
         (flags-img (bitwise-ior IMG_INIT_JPG IMG_INIT_PNG)))
     (when (< (SDL_Init flags-sdl) 0)
           (error-log "Couldn't initialize SDL!"))
-    ;; Initialize events
+    ;; Initialize events. Do it as soon as possible, for platforms such as iOS
     (init-events!)
     ;; SDL_image initialization
     (when (not (= (IMG_Init flags-img) flags-img))
@@ -355,12 +291,10 @@
     (SDL_GL_SetAttribute SDL_GL_RETAINED_BACKING 1)
     ;; Get screen size, Portrait orientation by default
     (SDL_GetDisplayMode 0 0 mode*)
-    (let* ((reported-width (SDL_DisplayMode-w mode*))
-           (reported-height (SDL_DisplayMode-h mode*))
-           (width (min reported-width reported-height))
-           (height (max reported-width reported-height)))
-      (set! screen-width width)
-      (set! screen-height height))
+    (let ((reported-width (SDL_DisplayMode-w mode*))
+          (reported-height (SDL_DisplayMode-h mode*)))
+      (set! screen-width (min reported-width reported-height))
+      (set! screen-height (max reported-width reported-height)))
     (set! window
           (SDL_CreateWindow "SDL/GL" SDL_WINDOWPOS_CENTERED SDL_WINDOWPOS_CENTERED
                             screen-width screen-height

@@ -80,8 +80,9 @@ end-c-lambda
   (define (update-source source)
     (if (zero? (shell-command (string-append "wget localhost:8000/" source " -O assets/src/" source)))
         (load (string-append "assets/src/" source))
-        (for-each (lambda (f) (f (string-append source " could not be retrieved")))
-                  '(SDL_Log println))))
+        (let ((message (string-append source " could not be retrieved")))
+          (SDL_log message)
+          (println message))))
   ;; gl-utils.scm
   (update-source "gl-utils.scm")
   ;; app.scm
