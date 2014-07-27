@@ -46,20 +46,6 @@ end-c-lambda
   (lambda (file)
     (for-each eval (with-input-from-file file read-all))))
 
-;; TODO: move to SDL for iOS
-(define *current-sdl-events-filter*
-  (lambda (userdata event)
-    (SDL_Log "SDL Events Filter is not set")
-    1))
-
-(define (sdl-events-filter-set! proc)
-  (set! *current-sdl-events-filter* proc))
-
-(c-define (*sdl-events-filter-proxy* userdata event)
-          (void* SDL_Event*) int "SDL_default_events_handler" ""
-          (*current-sdl-events-filter* userdata event))
-
-
 ;; Sphere environment
 (parameterize
  ((current-directory
