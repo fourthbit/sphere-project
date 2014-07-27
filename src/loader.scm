@@ -55,13 +55,13 @@ end-c-lambda
 
 ;; Initialize globals
 (define (init-globals)
-  (if (zero? (shell-command "wget -N localhost:8000/globals.scm -O assets/src/globals.scm"))
+  (if (zero? (shell-command "wget localhost:8000/globals.scm -O assets/src/globals.scm"))
       (load "assets/src/globals.scm")
       (println "globals.scm could not be retrieved")))
 
 ;; Update the app Scheme source code
 (define (update-app)
-  (if (zero? (shell-command "wget -N localhost:8000/app.scm -O assets/src/app.scm"))
+  (if (zero? (shell-command "wget localhost:8000/app.scm -O assets/src/app.scm"))
       (load "assets/src/app.scm")
       (println "app.scm could not be retrieved")))
 

@@ -111,13 +111,33 @@
                                 verbose: #t))))
 
 (define-task ios:run ()
-  ;; First kill the running instance of the iPhone simulator
-  (shell-command "killall -9 iPhone\\ Simulator")
-  (parameterize
-   ((current-directory (ios-directory)))
-   (shell-command
-    (string-append
-     (ios-sim-path) " launch build/Debug-iphonesimulator/SchemeSpheres.app"))))
+  ;; First kill any running instance of the iPhone simulator
+  (shell-command "killall -9 iPhone\\ Simulator &>/dev/null")
+  ;; Run asset server and iOS simulator
+  (let* ((asset-server (parameterize
+                        ((current-directory (string-append (ios-assets-directory) "src/")))
+                        (open-process (list path: "python"
+                                            arguments: '("-m" "SimpleHTTPServer")
+                                            stdin-redirection: #t
+                                            stdout-redirection: #t
+                                            stderr-redirection: #t))))
+         (server-pid (process-pid asset-server))
+         (ios-simulator (parameterize
+                         ((current-directory (ios-directory)))
+                         (open-process (list path: (ios-sim-path)
+                                             arguments: '("launch" "build/Debug-iphonesimulator/SchemeSpheres.app")))))
+         (simulator-pid (process-pid ios-simulator)))
+    ;; Wait for the iOS simulator to finish
+    (process-status ios-simulator)
+    ;; Kill asset server when leaving simulator
+    (let ((kill-server (open-process
+                        (list path: "kill"
+                              arguments: '("-15" (number->string server-pid)))))
+          (kill-simulator (open-process
+                           (list path: "kill"
+                                 arguments: '("-15" (number->string simulator-pid))))))
+      (process-status kill-server)
+      (process-status kill-simulator))))
 
 (define-task ios:xcode ()
   (shell-command "open -a Xcode ios/SchemeSpheres.xcodeproj"))
