@@ -65,7 +65,6 @@ end-c-lambda
       (load "assets/src/app.scm")
       (println "app.scm could not be retrieved")))
 
-;; Run globals and app code automatically
 (init-globals)
 (update-app)
 

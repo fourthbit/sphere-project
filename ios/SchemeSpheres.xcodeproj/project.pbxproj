@@ -144,6 +144,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				38294B11198177DD00E6C773 /* libz.dylib in Frameworks */,
 				3825BC391981A84B007D5937 /* CoreGraphics.framework in Frameworks */,
 				3825BC381981A82A007D5937 /* ImageIO.framework in Frameworks */,
 				3825BC341981A774007D5937 /* MobileCoreServices.framework in Frameworks */,
@@ -153,7 +154,6 @@
 				28FD15080DC6FC5B0079059D /* QuartzCore.framework in Frameworks */,
 				FD779EDE0E26BA1200F39101 /* CoreAudio.framework in Frameworks */,
 				FD77A0850E26BDB800F39101 /* AudioToolbox.framework in Frameworks */,
-				38294B11198177DD00E6C773 /* libz.dylib in Frameworks */,
 				38A7C10D1959994F00FD6D80 /* libSDL2.a in Frameworks */,
 				385CD0011981A3B8000CBFB3 /* libSDL2_image.a in Frameworks */,
 				3815AEC81964CB9200D24481 /* libspheres.a in Frameworks */,
@@ -475,7 +475,6 @@
 					"$(PROJECT_DIR)/gambit",
 					"$(PROJECT_DIR)/gambit/lib",
 					"$(PROJECT_DIR)/src",
-					"$(PROJECT_DIR)/libpng/lib",
 					"$(PROJECT_DIR)/SDL_image/lib",
 				);
 				MACH_O_TYPE = mh_execute;
@@ -512,7 +511,6 @@
 					"$(PROJECT_DIR)/gambit",
 					"$(PROJECT_DIR)/gambit/lib",
 					"$(PROJECT_DIR)/src",
-					"$(PROJECT_DIR)/libpng/lib",
 					"$(PROJECT_DIR)/SDL_image/lib",
 				);
 				MACH_O_TYPE = mh_execute;

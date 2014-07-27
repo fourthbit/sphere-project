@@ -290,3 +290,7 @@
   (SDL_DestroyWindow window)
   (SDL_Quit)
   (exit))
+
+(define (run)
+  (init-app)
+  (test))
