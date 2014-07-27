@@ -1,95 +1,26 @@
 ;;-------------------------------------------------------------------------------
-;; Utils
-
-;; Executes the given form and checks if GL's state is valid
-(define-macro (check-gl-error exp)
-  `(begin
-     ,exp
-     (let ((error (glGetError)))
-       (if (= error GL_NO_ERROR)
-           #t
-           (begin
-             (SDL_Log (string-append "GL Error: " (object->string error) " - " (object->string ',exp)))
-             #f)))))
-
-;; Loads an image from the given path and creates a texture object to hold it
-(define (load-texture->gl-texture window path)
-  (let* ((texture-img* (IMG_Load path)) ;; default format: ARGB8888
-         (texture-id* (alloc-GLuint* 1)))
-    ;; Alternative method (using GL_RGBA). Remember that PixelFormat is backwards in SDL
-    ;; (SDL_ConvertSurfaceFormat texture-img-unformatted* SDL_PIXELFORMAT_ABGR8888 0)
-    ;; Generate and bind texture
-    (glGenTextures 1 texture-id*)
-    (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
-    ;; Check errors
-    (check-gl-error
-     (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA ; internal format
-                   (SDL_Surface-w texture-img*) (SDL_Surface-h texture-img*)
-                   0 GL_BGRA_EXT GL_UNSIGNED_BYTE
-                   (SDL_Surface-pixels texture-img*)))
-    ;; FILTER: Necessary for NPOT textures in GLES2
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
-    ;; WRAP: Necessary for NPOT textures in GLES2
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
-    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
-    ;; Unbind and free the surface
-    (glBindTexture GL_TEXTURE_2D 0)
-    (SDL_FreeSurface texture-img*)
-    texture-id*))
-
-;; Creates a new OpenGL VBO from a given f32vector.
-(define* (f32vector->gl-buffer vertex-data-vector
-                               (buffer-type GL_STATIC_DRAW))
-  (let ((buffer-id* (alloc-GLuint* 1)))
-    (glGenBuffers 1 buffer-id*)
-    (glBindBuffer GL_ARRAY_BUFFER (*->GLuint buffer-id*))
-    (glBufferData GL_ARRAY_BUFFER
-                  (* (f32vector-length vertex-data-vector) GLfloat-size)
-                  (f32vector->GLfloat* vertex-data-vector)
-                  GL_STATIC_DRAW)
-    (glBindBuffer GL_ARRAY_BUFFER 0)
-    buffer-id*))
-
-;; Draws the given vbo with a particular program. The callback is
-;; used to set up the attributes of the dynamic attributes
-(define (draw-vbo vbo-id* program-id type count attribs-callback)
-  (let ((vbo-id (*->GLuint vbo-id*)))
-    (glUseProgram program-id)
-    (when (check-gl-error (glBindBuffer GL_ARRAY_BUFFER vbo-id))
-          (attribs-callback)
-          (check-gl-error (glDrawArrays type 0 count))
-          (glBindBuffer GL_ARRAY_BUFFER 0))
-    (glUseProgram 0)))
-
-
-;;-------------------------------------------------------------------------------
 ;; Events
-
-(define (get-key-code event)
-  (SDL_Keysym-sym
-   (SDL_KeyboardEvent-keysym
-    (SDL_Event-key event))))
-
-(define (resize-event? event)
-  (and
-   (= SDL_WINDOWEVENT (SDL_Event-type event))
-   (or (= SDL_WINDOWEVENT_SIZE_CHANGED (SDL_WindowEvent-event (SDL_Event-window event)))
-       (= SDL_WINDOWEVENT_RESIZED (SDL_WindowEvent-event (SDL_Event-window event))))))
-
-(define (click-action? event)
-  (or (= SDL_FINGERDOWN (SDL_Event-type event))
-      (= SDL_MOUSEBUTTONDOWN (SDL_Event-type event))))
-
-(define (exit-application? event)
-  (or (= SDL_QUIT (SDL_Event-type event))
-      (and
-       (= SDL_KEYUP (SDL_Event-type event))
-       (or (= (get-key-code event) SDLK_ESCAPE)
-           (= (get-key-code event) SDLK_AC_BACK)))))
 
 ;; TODO: decouple form art
 (define (handle-events!)
+  (define (get-key-code event)
+    (SDL_Keysym-sym
+     (SDL_KeyboardEvent-keysym
+      (SDL_Event-key event))))
+  (define (resize-event? event)
+    (and
+     (= SDL_WINDOWEVENT (SDL_Event-type event))
+     (or (= SDL_WINDOWEVENT_SIZE_CHANGED (SDL_WindowEvent-event (SDL_Event-window event)))
+         (= SDL_WINDOWEVENT_RESIZED (SDL_WindowEvent-event (SDL_Event-window event))))))
+  (define (click-action? event)
+    (or (= SDL_FINGERDOWN (SDL_Event-type event))
+        (= SDL_MOUSEBUTTONDOWN (SDL_Event-type event))))
+  (define (exit-application? event)
+    (or (= SDL_QUIT (SDL_Event-type event))
+        (and
+         (= SDL_KEYUP (SDL_Event-type event))
+         (or (= (get-key-code event) SDLK_ESCAPE)
+             (= (get-key-code event) SDLK_AC_BACK)))))
   (let ((event (alloc-SDL_Event)))
     (let ev-poll ()
       (when (= 1 (SDL_PollEvent event))
@@ -162,15 +93,15 @@
   ;; Creates a new program with the given vertex and shader files paths.
   ;; A callback function to set up the attributes must be provided
   (let ((color-program-id
-         (fusion:gl-create-program (list (fusion:gl-create-shader
-                                          GL_VERTEX_SHADER
-                                          (fusion:load-text-file "assets/shaders/color.vert"))
-                                         (fusion:gl-create-shader
-                                          GL_FRAGMENT_SHADER
-                                          (fusion:load-text-file "assets/shaders/color.frag")))
-                                   (lambda (program-id)
-                                     (glBindAttribLocation program-id 0 "position"))
-                                   delete-shaders?: #t)))
+         (gl-create-program (list (gl-create-shader
+                                   GL_VERTEX_SHADER
+                                   (load-text-file "assets/shaders/color.vert"))
+                                  (gl-create-shader
+                                   GL_FRAGMENT_SHADER
+                                   (load-text-file "assets/shaders/color.frag")))
+                            (lambda (program-id)
+                              (glBindAttribLocation program-id 0 "position"))
+                            delete-shaders?: #t)))
     (table-set! gl-programs 'color color-program-id)
     (glUseProgram color-program-id)
     (check-gl-error
@@ -178,16 +109,16 @@
                  (glGetUniformLocation color-program-id "perspectiveMatrix")))
     (glUseProgram 0))
   (let ((tex2d-program-id
-         (fusion:gl-create-program (list (fusion:gl-create-shader
-                                          GL_VERTEX_SHADER
-                                          (fusion:load-text-file "assets/shaders/tex2d.vert"))
-                                         (fusion:gl-create-shader
-                                          GL_FRAGMENT_SHADER
-                                          (fusion:load-text-file "assets/shaders/tex2d.frag")))
-                                   (lambda (program-id)
-                                     (glBindAttribLocation program-id 0 "position")
-                                     (glBindAttribLocation program-id 1 "texCoord"))
-                                   delete-shaders?: #t)))
+         (gl-create-program (list (gl-create-shader
+                                   GL_VERTEX_SHADER
+                                   (load-text-file "assets/shaders/tex2d.vert"))
+                                  (gl-create-shader
+                                   GL_FRAGMENT_SHADER
+                                   (load-text-file "assets/shaders/tex2d.frag")))
+                            (lambda (program-id)
+                              (glBindAttribLocation program-id 0 "position")
+                              (glBindAttribLocation program-id 1 "texCoord"))
+                            delete-shaders?: #t)))
     (table-set! gl-programs 'tex2d tex2d-program-id)
     (glUseProgram tex2d-program-id)
     (check-gl-error
@@ -246,9 +177,71 @@
   (table-for-each (lambda (buffer) (glDeleteBuffers 1 buffer)) gl-buffers)
   (set! gl-buffers (make-table))
   (table-for-each (lambda (buffer) (glDeleteTextures 1 buffer)) gl-textures)
-  (set! gl-textures (make-table))
-  (table-for-each glDeleteProgram gl-programs)
-  (set! gl-programs (make-table)))
+  (set! gl-textures (make-table)))
+
+;;-------------------------------------------------------------------------------
+;; Utils
+
+;; Executes the given form and checks if GL's state is valid
+(define-macro (check-gl-error exp)
+  `(begin
+     ,exp
+     (let ((error (glGetError)))
+       (if (= error GL_NO_ERROR)
+           #t
+           (begin
+             (SDL_Log (string-append "GL Error: " (object->string error) " - " (object->string ',exp)))
+             #f)))))
+
+;; Loads an image from the given path and creates a texture object to hold it
+(define (load-texture->gl-texture window path)
+  (let* ((texture-img* (IMG_Load path)) ;; default format: ARGB8888
+         (texture-id* (alloc-GLuint* 1)))
+    ;; Alternative method (using GL_RGBA). Remember that PixelFormat is backwards in SDL
+    ;; (SDL_ConvertSurfaceFormat texture-img-unformatted* SDL_PIXELFORMAT_ABGR8888 0)
+    ;; Generate and bind texture
+    (glGenTextures 1 texture-id*)
+    (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
+    ;; Check errors
+    (check-gl-error
+     (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA ; internal format
+                   (SDL_Surface-w texture-img*) (SDL_Surface-h texture-img*)
+                   0 GL_BGRA_EXT GL_UNSIGNED_BYTE
+                   (SDL_Surface-pixels texture-img*)))
+    ;; FILTER: Necessary for NPOT textures in GLES2
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
+    ;; WRAP: Necessary for NPOT textures in GLES2
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
+    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
+    ;; Unbind and free the surface
+    (glBindTexture GL_TEXTURE_2D 0)
+    (SDL_FreeSurface texture-img*)
+    texture-id*))
+
+;; Creates a new OpenGL VBO from a given f32vector.
+(define* (f32vector->gl-buffer vertex-data-vector
+                               (buffer-type GL_STATIC_DRAW))
+  (let ((buffer-id* (alloc-GLuint* 1)))
+    (glGenBuffers 1 buffer-id*)
+    (glBindBuffer GL_ARRAY_BUFFER (*->GLuint buffer-id*))
+    (glBufferData GL_ARRAY_BUFFER
+                  (* (f32vector-length vertex-data-vector) GLfloat-size)
+                  (f32vector->GLfloat* vertex-data-vector)
+                  GL_STATIC_DRAW)
+    (glBindBuffer GL_ARRAY_BUFFER 0)
+    buffer-id*))
+
+;; Draws the given vbo with a particular program. The callback is
+;; used to set up the attributes of the dynamic attributes
+(define (draw-vbo vbo-id* program-id type count attribs-callback)
+  (let ((vbo-id (*->GLuint vbo-id*)))
+    (glUseProgram program-id)
+    (when (check-gl-error (glBindBuffer GL_ARRAY_BUFFER vbo-id))
+          (attribs-callback)
+          (check-gl-error (glDrawArrays type 0 count))
+          (glBindBuffer GL_ARRAY_BUFFER 0))
+    (glUseProgram 0)))
 
 ;;-------------------------------------------------------------------------------
 ;; Application life cycle
@@ -267,9 +260,9 @@
         (flags-sdl (bitwise-ior SDL_INIT_VIDEO SDL_INIT_AUDIO))
         (flags-img (bitwise-ior IMG_INIT_JPG IMG_INIT_PNG)))
     (when (< (SDL_Init flags-sdl) 0)
-          (fusion:error "Couldn't initialize SDL!"))
+          (error-log "Couldn't initialize SDL!"))
     (when (not (= (IMG_Init flags-img) flags-img))
-          (fusion:error "Couldn't initialize SDL Image!"))
+          (error-log "Couldn't initialize SDL Image!"))
     (cond-expand
      (host #!void)
      (else
@@ -296,7 +289,7 @@
                                          SDL_WINDOW_RESIZABLE
                                          SDL_WINDOW_BORDERLESS
                                          SDL_WINDOW_ALLOW_HIGHDPI)))
-    (unless window (fusion:error "Unable to create render window" (SDL_GetError)))
+    (unless window (error-log "Unable to create render window" (SDL_GetError)))
     ;; OpenGL/ES context
     (let ((ctx (SDL_GL_CreateContext window)))
       (SDL_Log (string-append "SDL screen size: " (object->string screen-width) " x " (object->string screen-height)))
@@ -329,3 +322,8 @@
   (SDL_DestroyWindow window)
   (SDL_Quit)
   (exit))
+
+;;-------------------------------------------------------------------------------
+;; Automatically run App on load
+
+(run!)

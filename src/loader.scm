@@ -59,14 +59,20 @@ end-c-lambda
       (load "assets/src/globals.scm")
       (println "globals.scm could not be retrieved")))
 
+;; Automatically load files
+(init-globals)
+
 ;; Update the app Scheme source code
 (define (update-app)
-  (if (zero? (shell-command "wget localhost:8000/app.scm -O assets/src/app.scm"))
-      (load "assets/src/app.scm")
-      (println "app.scm could not be retrieved")))
-
-(init-globals)
-(update-app)
+  (define (update-source source)
+    (if (zero? (shell-command (string-append "wget localhost:8000/" source " -O assets/src/" source)))
+        (load (string-append "assets/src/" source))
+        (for-each (lambda (f) (f (string-append source " could not be retrieved")))
+                  '(SDL_Log println))))
+  ;; gl-utils.scm
+  (update-source "gl-utils.scm")
+  ;; app.scm
+  (update-source "app.scm"))
 
 ;; Install and run the remote REPL: IP address of the computer running the debug server
 (if (remote-repl-setup! "localhost" port: 20000)
