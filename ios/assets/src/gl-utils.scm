@@ -11,23 +11,41 @@
 
 ;; Executes the given form and checks if GL's state is valid
 (define-macro (check-gl-error exp)
-  `(begin
-     ,exp
-     (let ((error (glGetError)))
-       (if (= error GL_NO_ERROR)
-           #t
-           (begin
-             (SDL_Log (string-append "GL Error: " (object->string error) " - " (object->string ',exp)))
-             #f)))))
+  `(let* ((result ,exp)
+          (error (glGetError)))
+     (unless (= error GL_NO_ERROR)
+             (error-log (string-append "GL Error -- " (object->string error)
+                                       " - " (object->string ',exp))))
+     result))
+
+(define (log . msgs)
+  (let ((message (apply string-append
+                        (map (lambda (m) (string-append
+                                     (if (string? m) m (object->string m))
+                                     " "))
+                             msgs))))
+    (cond-expand
+     (host
+      (SDL_Log message))
+     (else
+      (SDL_Log message)
+      (println message)))))
 
 ;; Error output for mobile and host
 (define (error-log . msgs)
-  (SDL_LogError SDL_LOG_CATEGORY_APPLICATION
-                (apply string-append
-                       (map (lambda (m) (string-append
-                                    (if (string? m) m (object->string m))
-                                    " "))
-                            msgs))))
+  (let ((message (apply string-append
+                        (map (lambda (m) (string-append
+                                     (if (string? m) m (object->string m))
+                                     " "))
+                             msgs))))
+    (cond-expand
+     (host
+      (SDL_LogError SDL_LOG_CATEGORY_APPLICATION message)
+      (SDL_Quit)
+      (exit))
+     (else
+      (SDL_LogError SDL_LOG_CATEGORY_APPLICATION message)
+      (println (string-append "error: " message))))))
 
 ;;! Create a shader
 ;; .parameter Type of shader

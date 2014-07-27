@@ -1,39 +1,90 @@
 ;;-------------------------------------------------------------------------------
 ;; Events
 
-;; TODO: decouple form art
-(define (handle-events!)
+;; TODO: decouple form graphics
+(define (handle-events)
   (define (get-key-code event)
     (SDL_Keysym-sym
      (SDL_KeyboardEvent-keysym
       (SDL_Event-key event))))
-  (define (resize-event? event)
-    (and
-     (= SDL_WINDOWEVENT (SDL_Event-type event))
-     (or (= SDL_WINDOWEVENT_SIZE_CHANGED (SDL_WindowEvent-event (SDL_Event-window event)))
-         (= SDL_WINDOWEVENT_RESIZED (SDL_WindowEvent-event (SDL_Event-window event))))))
-  (define (click-action? event)
-    (or (= SDL_FINGERDOWN (SDL_Event-type event))
-        (= SDL_MOUSEBUTTONDOWN (SDL_Event-type event))))
-  (define (exit-application? event)
-    (or (= SDL_QUIT (SDL_Event-type event))
-        (and
-         (= SDL_KEYUP (SDL_Event-type event))
-         (or (= (get-key-code event) SDLK_ESCAPE)
-             (= (get-key-code event) SDLK_AC_BACK)))))
-  (let ((event (alloc-SDL_Event)))
+  (let ((event (alloc-SDL_Event))
+        (filled #f))
     (let ev-poll ()
       (when (= 1 (SDL_PollEvent event))
-            (cond ((exit-application? event)
-                   (SDL_Quit))
-                  ((click-action? event)
-                   (SDL_Log "CLICK!"))
-                  ((resize-event? event)
-                   (let ((resize (SDL_Event-window event)))
-                     (resize-graphics! (SDL_WindowEvent-data1 resize)
-                                       (SDL_WindowEvent-data2 resize)))))
-            'continue))))
+            (let ((event-type (SDL_Event-type event)))
+              (cond
+               ((or (= SDL_QUIT event-type)
+                    (and
+                     (= SDL_KEYUP event-type)
+                     (or (= (get-key-code event) SDLK_ESCAPE)
+                         (= (get-key-code event) SDLK_AC_BACK))))
+                (SDL_Quit))
+               ;; Touch events
+               ((= SDL_FINGERMOTION event-type)
+                'ignore)
+               ((= SDL_FINGERDOWN event-type)
+                'ignore)
+               ((= SDL_FINGERUP event-type)
+                ;; (let ((finger-event (SDL_Event-tfinger event)))
+                ;;   (log "Finger -"
+                ;;        "X:" (SDL_TouchFingerEvent-x finger-event)
+                ;;        "Y:" (SDL_TouchFingerEvent-y finger-event)))
+                'ignore)
+               ;; Mouse events
+               ((= SDL_MOUSEMOTION event-type)
+                'ignore)
+               ((= SDL_MOUSEBUTTONDOWN event-type)
+                'ignore)
+               ((= SDL_MOUSEBUTTONUP event-type)
+                (let ((mouse-event (SDL_Event-button event)))
+                  (log "Mouse button -"
+                       "X:" (SDL_MouseButtonEvent-x mouse-event)
+                       "Y:" (SDL_MouseButtonEvent-y mouse-event))))
+               ;; Window events
+               ((and
+                 (= SDL_WINDOWEVENT event-type)
+                 (or (= SDL_WINDOWEVENT_SIZE_CHANGED (SDL_WindowEvent-event (SDL_Event-window event)))
+                     (= SDL_WINDOWEVENT_RESIZED (SDL_WindowEvent-event (SDL_Event-window event)))))
+                (let ((resize (SDL_Event-window event)))
+                  (resize-graphics! (SDL_WindowEvent-data1 resize)
+                                    (SDL_WindowEvent-data2 resize))))
+               (else
+                (log "Unhandled event - " event-type))))
+            (ev-poll)))))
 
+(define (init-events!)
+  (SDL_SetEventFilter default-sdl-events-handler #f)
+  (set-current-sdl-events-filter!
+   (lambda (userdata event)
+     (let ((event-type (SDL_Event-type event)))
+       (cond ((= SDL_APP_TERMINATING event-type)
+              ;; Terminate the app. Shut everything down before returning from this function.
+              0)
+             ((= SDL_APP_LOWMEMORY event-type)
+              ;; You will get this when your app is paused and iOS wants more memory.
+              ;; Release as much memory as possible.
+              0)
+             ((= SDL_APP_WILLENTERBACKGROUND event-type)
+              ;; Prepare your app to go into the background.  Stop loops, etc.
+              ;; This gets called when the user hits the home button, or gets a call.
+              0)
+             ((= SDL_APP_DIDENTERBACKGROUND event-type)
+              ;; This will get called if the user accepted whatever sent your app to the background.
+              ;; If the user got a phone call and canceled it, you'll instead get an SDL_APP_DIDENTERFOREGROUND event and restart your loops.
+              ;; When you get this, you have 5 seconds to save all your state or the app will be terminated.
+              ;; Your app is NOT active at this point.
+              0)
+             ((= SDL_APP_WILLENTERFOREGROUND event-type)
+              ;; This call happens when your app is coming back to the foreground.
+              ;; Restore all your state here.
+              0)
+             ((= SDL_APP_DIDENTERFOREGROUND event-type)
+              ;; Restart your loops here.
+              ;; Your app is interactive and getting CPU again.
+              0)
+             (else
+              ;; No special processing, add it to the event queue
+              1))))))
 
 ;;-------------------------------------------------------------------------------
 ;; Application World
@@ -250,8 +301,8 @@
 (define (run!)
   (when (zero? (SDL_WasInit 0))
         (init-app!))
-  (handle-events!)
   (update-app!)
+  (handle-events)
   (draw (update-world '())))
 
 ;; Initializes the App
@@ -261,6 +312,9 @@
         (flags-img (bitwise-ior IMG_INIT_JPG IMG_INIT_PNG)))
     (when (< (SDL_Init flags-sdl) 0)
           (error-log "Couldn't initialize SDL!"))
+    ;; Initialize events
+    (init-events!)
+    ;; SDL_image initialization
     (when (not (= (IMG_Init flags-img) flags-img))
           (error-log "Couldn't initialize SDL Image!"))
     (cond-expand
@@ -274,6 +328,8 @@
     (SDL_GL_SetAttribute SDL_GL_GREEN_SIZE 8)
     (SDL_GL_SetAttribute SDL_GL_BLUE_SIZE 8)
     (SDL_GL_SetAttribute SDL_GL_DOUBLEBUFFER 1)
+    (SDL_GL_SetAttribute SDL_GL_DEPTH_SIZE 0)
+    (SDL_GL_SetAttribute SDL_GL_RETAINED_BACKING 1)
     ;; Get screen size, Portrait orientation by default
     (SDL_GetDisplayMode 0 0 mode*)
     (let* ((reported-width (SDL_DisplayMode-w mode*))
