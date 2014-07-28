@@ -146,7 +146,7 @@
 
 ;; Draws the given vbo with a particular program. The callback is
 ;; used to set up the attributes of the dynamic attributes
-(define (draw-vbo vbo-id* program-id type count attribs-callback)
+(define (gl-draw-vbo vbo-id* program-id type count attribs-callback)
   (let ((vbo-id (*->GLuint vbo-id*)))
     (glUseProgram program-id)
     (when (check-gl-error (glBindBuffer GL_ARRAY_BUFFER vbo-id))

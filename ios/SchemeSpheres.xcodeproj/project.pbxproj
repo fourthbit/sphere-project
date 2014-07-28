@@ -13,7 +13,6 @@
 		28FD15080DC6FC5B0079059D /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 28FD15070DC6FC5B0079059D /* QuartzCore.framework */; };
 		3803215D195DF10A002B40D9 /* libgambc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3803215C195DF10A002B40D9 /* libgambc.a */; };
 		38032199195F2343002B40D9 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 38032193195F2343002B40D9 /* main.c */; };
-		3803219A195F2343002B40D9 /* UIDevice+Hardware.m in Sources */ = {isa = PBXBuildFile; fileRef = 38032195195F2343002B40D9 /* UIDevice+Hardware.m */; };
 		3815AEC81964CB9200D24481 /* libspheres.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3815AEC71964CB9200D24481 /* libspheres.a */; };
 		3825BC341981A774007D5937 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3825BC331981A774007D5937 /* MobileCoreServices.framework */; };
 		3825BC381981A82A007D5937 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3825BC371981A82A007D5937 /* ImageIO.framework */; };
@@ -40,8 +39,6 @@
 		380320FF195D8271002B40D9 /* gambit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gambit.h; sourceTree = "<group>"; };
 		3803215C195DF10A002B40D9 /* libgambc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libgambc.a; sourceTree = "<group>"; };
 		38032193195F2343002B40D9 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = src/main.c; sourceTree = "<group>"; };
-		38032194195F2343002B40D9 /* UIDevice+Hardware.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "UIDevice+Hardware.h"; path = "src/UIDevice+Hardware.h"; sourceTree = "<group>"; };
-		38032195195F2343002B40D9 /* UIDevice+Hardware.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "UIDevice+Hardware.m"; path = "src/UIDevice+Hardware.m"; sourceTree = "<group>"; };
 		3815AEC71964CB9200D24481 /* libspheres.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libspheres.a; path = src/libspheres.a; sourceTree = "<group>"; };
 		3825BC331981A774007D5937 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		3825BC351981A7DA007D5937 /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
@@ -191,8 +188,6 @@
 			children = (
 				3815AEC71964CB9200D24481 /* libspheres.a */,
 				38032193195F2343002B40D9 /* main.c */,
-				38032194195F2343002B40D9 /* UIDevice+Hardware.h */,
-				38032195195F2343002B40D9 /* UIDevice+Hardware.m */,
 			);
 			name = src;
 			sourceTree = "<group>";
@@ -448,7 +443,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3803219A195F2343002B40D9 /* UIDevice+Hardware.m in Sources */,
 				38032199195F2343002B40D9 /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

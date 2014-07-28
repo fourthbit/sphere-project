@@ -96,34 +96,34 @@
 ;; Drawing
 
 (define (draw-triangle)
-  (draw-vbo (table-ref gl-buffers 'tri-vertices)
-            (table-ref gl-programs 'color)
-            GL_TRIANGLES 3
-            (lambda ()
-              (check-gl-error
-               (glUniformMatrix4fv (table-ref gl-uniforms 'perspective)
-                                   1 GL_FALSE gl-perspective-matrix))
-              (glEnableVertexAttribArray 0)
-              (glVertexAttribPointer 0 4 GL_FLOAT GL_TRUE 0 #f))))
+  (gl-draw-vbo (table-ref gl-buffers 'tri-vertices)
+               (table-ref gl-programs 'color)
+               GL_TRIANGLES 3
+               (lambda ()
+                 (check-gl-error
+                  (glUniformMatrix4fv (table-ref gl-uniforms 'perspective)
+                                      1 GL_FALSE gl-perspective-matrix))
+                 (glEnableVertexAttribArray 0)
+                 (glVertexAttribPointer 0 4 GL_FLOAT GL_TRUE 0 #f))))
 
 (define (draw-sprite)
-  (draw-vbo (table-ref gl-buffers 'quad-vertices)
-            (table-ref gl-programs 'tex2d)
-            GL_TRIANGLES 6
-            (lambda ()
-              (cond-expand (host (glBindSampler 0 (*->GLuint sprite-sampler*)))
-                           (else #!void))
-              (check-gl-error
-               (glUniform1i (table-ref gl-uniforms 'texture) 0))
-              (check-gl-error
-               (glUniformMatrix4fv (table-ref gl-uniforms 'perspective) 1 GL_FALSE gl-perspective-matrix))
-              (glEnableVertexAttribArray 0)
-              (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
-              (glEnableVertexAttribArray 1)
-              (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size)
-                                     (integer->void* (* 2 GLfloat-size)))
-              (glActiveTexture GL_TEXTURE0)
-              (glBindTexture GL_TEXTURE_2D (*->GLuint (table-ref gl-textures 'sprite1))))))
+  (gl-draw-vbo (table-ref gl-buffers 'quad-vertices)
+               (table-ref gl-programs 'tex2d)
+               GL_TRIANGLES 6
+               (lambda ()
+                 (cond-expand (host (glBindSampler 0 (*->GLuint sprite-sampler*)))
+                              (else #!void))
+                 (check-gl-error
+                  (glUniform1i (table-ref gl-uniforms 'texture) 0))
+                 (check-gl-error
+                  (glUniformMatrix4fv (table-ref gl-uniforms 'perspective) 1 GL_FALSE gl-perspective-matrix))
+                 (glEnableVertexAttribArray 0)
+                 (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
+                 (glEnableVertexAttribArray 1)
+                 (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size)
+                                        (integer->void* (* 2 GLfloat-size)))
+                 (glActiveTexture GL_TEXTURE0)
+                 (glBindTexture GL_TEXTURE_2D (*->GLuint (table-ref gl-textures 'sprite1))))))
 
 (define (draw world)
   (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
