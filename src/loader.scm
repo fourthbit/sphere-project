@@ -1,9 +1,8 @@
-;; TODO: look for the right place
+;; SchemeSpheres environment
+
 (define eval-file
   (lambda (file)
     (for-each eval (with-input-from-file file read-all))))
-
-;; Sphere environment
 (parameterize
  ((current-directory
    (cond-expand (android "sdcard") (else "spheres"))))

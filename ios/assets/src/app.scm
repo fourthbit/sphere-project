@@ -95,19 +95,19 @@
 ;;-------------------------------------------------------------------------------
 ;; Drawing
 
-(define (draw-triangle)
-  (gl-draw-vbo (table-ref gl-buffers 'tri-vertices)
-               (table-ref gl-programs 'color)
-               GL_TRIANGLES 3
-               (lambda ()
-                 (check-gl-error
-                  (glUniformMatrix4fv (table-ref gl-uniforms 'perspective)
-                                      1 GL_FALSE gl-perspective-matrix))
-                 (glEnableVertexAttribArray 0)
-                 (glVertexAttribPointer 0 4 GL_FLOAT GL_TRUE 0 #f))))
+;; (define (draw-triangle)
+;;   (gl-draw-vbo (table-ref gl-buffers 'tri-vertices)
+;;                (table-ref gl-programs 'color)
+;;                GL_TRIANGLES 3
+;;                (lambda ()
+;;                  (check-gl-error
+;;                   (glUniformMatrix4fv (table-ref gl-uniforms 'perspective)
+;;                                       1 GL_FALSE gl-perspective-matrix))
+;;                  (glEnableVertexAttribArray 0)
+;;                  (glVertexAttribPointer 0 4 GL_FLOAT GL_TRUE 0 #f))))
 
-(define (draw-sprite)
-  (gl-draw-vbo (table-ref gl-buffers 'quad-vertices)
+(define (draw-sprite sprite)
+  (gl-draw-vbo (buffer-id (sprite-buffer sprite))
                (table-ref gl-programs 'tex2d)
                GL_TRIANGLES 6
                (lambda ()
@@ -123,7 +123,7 @@
                  (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size)
                                         (integer->void* (* 2 GLfloat-size)))
                  (glActiveTexture GL_TEXTURE0)
-                 (glBindTexture GL_TEXTURE_2D (*->GLuint (table-ref gl-textures 'sprite1))))))
+                 (glBindTexture GL_TEXTURE_2D (*->GLuint (texture-id (table-ref gl-textures 'the-lambda)))))))
 
 (define (draw world)
   (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
@@ -132,8 +132,9 @@
   (glCullFace GL_BACK)
   (apply glClearColor current-color)
   (glClear (bitwise-ior GL_COLOR_BUFFER_BIT))
-  (draw-triangle)
-  (draw-sprite)
+  ;;(draw-triangle)
+  (if my-sprite (draw-sprite my-sprite))
+  (if my-sprite2 (draw-sprite my-sprite2))
   (SDL_GL_SwapWindow window))
 
 ;;-------------------------------------------------------------------------------
@@ -180,29 +181,35 @@
     (glUseProgram 0)))
 
 ;; Initialize the OpenGL buffers
-(define (init-buffers!)
-  (update-buffers!))
+;; (define (init-buffers!)
+;;   (update-buffers!))
 
 ;; Loads the texture used by the quad and creates a sampler if running on host
-(define (init-textures! window)
-  (table-set! gl-textures 'sprite1
-              (load-texture->gl-texture window "assets/images/lambda.png"))
-  ;; Sampler
-  (cond-expand
-   (host (glGenSamplers 1 sprite-sampler*)
-         (let ((sampler-id (*->GLuint sprite-sampler*)))
-           (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
-           (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
-           (glSamplerParameteri sampler-id GL_TEXTURE_MAG_FILTER GL_NEAREST)
-           (glSamplerParameteri sampler-id GL_TEXTURE_MIN_FILTER GL_NEAREST)))
-   (else #!void)))
+;; (define (init-textures! window)
+;;   (table-set! gl-textures 'sprite1
+;;               (load-texture->gl-texture window "assets/images/lambda.png"))
+;;   ;; Sampler
+;;   (cond-expand
+;;    (host (glGenSamplers 1 sprite-sampler*)
+;;          (let ((sampler-id (*->GLuint sprite-sampler*)))
+;;            (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
+;;            (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
+;;            (glSamplerParameteri sampler-id GL_TEXTURE_MAG_FILTER GL_NEAREST)
+;;            (glSamplerParameteri sampler-id GL_TEXTURE_MIN_FILTER GL_NEAREST)))
+;;    (else #!void)))
 
 ;; Initializes the graphic system
+(define my-sprite #f) ;; XXX
+(define my-sprite2 #f) ;; XXX
+
 (define (init-graphics!)
   (resize-graphics! screen-width screen-height)
   (init-shaders!)
-  (init-buffers!)
-  (init-textures! window))
+  ;;(init-buffers!)
+  ;;(init-textures! window)
+  (make-texture 'the-lambda "assets/images/lambda.png")
+  (set! my-sprite (make-sprite 50.0 50.0 'the-lambda))
+  (set! my-sprite2 (make-sprite 250.0 250.0 'the-lambda)))
 
 ;; Handle window resizing and orientation
 (define (resize-graphics! screen-width screen-height)
@@ -219,9 +226,9 @@
                                            perspective-matrix))))
 
 ;; Updates VBOs from the static vectors defined at the top of the file
-(define (update-buffers!)
-  (table-set! gl-buffers 'tri-vertices (f32vector->gl-buffer triangle-data-vector))
-  (table-set! gl-buffers 'quad-vertices (f32vector->gl-buffer quad-data-vector)))
+;; (define (update-buffers!)
+;;   (table-set! gl-buffers 'tri-vertices (f32vector->gl-buffer triangle-data-vector))
+;;   (table-set! gl-buffers 'quad-vertices (f32vector->gl-buffer quad-data-vector)))
 
 ;; Tear down all OpenGL structures
 (define (destroy-graphics!)
