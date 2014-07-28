@@ -74,6 +74,8 @@
   width
   height)
 
+;; make-texture
+;; Textures are automatically registered and can be later accessed from the global table
 (define make-texture
   (let ((load-texture->gl-texture
          (lambda (path)
@@ -111,6 +113,8 @@
                    (if register? (table-set! gl-textures key instance))
                    instance)))))
 
+
+
 ;; (cond-expand
 ;;  (host (define sprite-sampler* (alloc-GLuint* 1)))
 ;;  (else #!void))
@@ -138,19 +142,20 @@
   texture-id
   buffer)
 
+;; TODO: WHEN SPRITE IS DESTROYED, SO IS THE BUFFER (USE WILLS)
 (define (make-sprite x y texture-key)
   (let* ((tex (table-ref gl-textures texture-key #f))
          (texture-w (texture-width tex))
          (texture-h (texture-height tex)))
    (sprite-constructor
-    (random-integer 99999999) ;; UID: TODO
+    (random-integer 99999999999999999999) ;; UID: TODO
     x
     y
     (when tex texture-w)
     (when tex texture-h)
     texture-key
     (texture-id tex)
-    (make-buffer (random-integer 99999999) ;; UID: TODO
+    (make-buffer (random-integer 9999999999999999999) ;; UID: TODO
                  'f32vector
                  (let ((qx1 x)
                        (qy1 y))
@@ -159,10 +164,15 @@
                      (f32vector qx1 qy1 0.0 0.0
                                 qx1 qy2 0.0 1.0
                                 qx2 qy1 1.0 0.0
-
                                 qx2 qy1 1.0 0.0
                                 qx1 qy2 0.0 1.0
                                 qx2 qy2 1.0 1.0)))))))
+
+
+
+
+
+
 
 
 ; Vertex coordinates for the quad (two triangles)

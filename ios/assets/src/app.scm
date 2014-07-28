@@ -89,6 +89,13 @@
 ;;-------------------------------------------------------------------------------
 ;; Application World
 
+(define (create-world)
+  ;;(init-buffers!)
+  ;;(init-textures! window)
+  (list (make-sprite 50.0 50.0 'the-lambda)
+        (make-sprite 250.0 250.0 'the-lambda)))
+
+
 (define (update-world world)
   world)
 
@@ -133,9 +140,10 @@
   (apply glClearColor current-color)
   (glClear (bitwise-ior GL_COLOR_BUFFER_BIT))
   ;;(draw-triangle)
-  (if my-sprite (draw-sprite my-sprite))
-  (if my-sprite2 (draw-sprite my-sprite2))
-  (SDL_GL_SwapWindow window))
+  ;; TODO!!! handle different assets
+  (for-each draw-sprite world)
+  (SDL_GL_SwapWindow window)
+  world)
 
 ;;-------------------------------------------------------------------------------
 ;; Graphics
@@ -198,18 +206,10 @@
 ;;            (glSamplerParameteri sampler-id GL_TEXTURE_MIN_FILTER GL_NEAREST)))
 ;;    (else #!void)))
 
-;; Initializes the graphic system
-(define my-sprite #f) ;; XXX
-(define my-sprite2 #f) ;; XXX
-
 (define (init-graphics!)
   (resize-graphics! screen-width screen-height)
   (init-shaders!)
-  ;;(init-buffers!)
-  ;;(init-textures! window)
-  (make-texture 'the-lambda "assets/images/lambda.png")
-  (set! my-sprite (make-sprite 50.0 50.0 'the-lambda))
-  (set! my-sprite2 (make-sprite 250.0 250.0 'the-lambda)))
+  (make-texture 'the-lambda "assets/images/lambda.png"));; TODO: make-texture? load-texture?
 
 ;; Handle window resizing and orientation
 (define (resize-graphics! screen-width screen-height)
@@ -241,12 +241,13 @@
 ;; Application life cycle
 
 ;; Single command for running the app and initializing if necessary
-(define (run!)
-  (when (zero? (SDL_WasInit 0))
-        (init-app!))
+(define* (step! (world
+                 (when (zero? (SDL_WasInit 0))
+                       (init-app!)
+                       (create-world))))
   (update-app!)
   (handle-events)
-  (draw (update-world '())))
+  (draw (update-world world)))
 
 ;; Application main loop
 ;; TODO
@@ -267,9 +268,7 @@
     (let loop ((world '()))
       (update-app!)
       (handle-events)
-      (let ((new-world (update-world world)))
-        (draw new-world)
-        (loop new-world))))))
+      (loop (draw (update-world world)))))))
 
 ;; Initializes the App
 (define (init-app!)
@@ -319,6 +318,7 @@
     ;; OpenGL viewport
     (glViewport 0 0 screen-width screen-height)
     (glScissor 0 0 screen-width screen-height)
+    ;; Init graphics: shaders, textures...
     (init-graphics!)))
 
 ;; Update global variables
@@ -326,6 +326,7 @@
 (define current-color '(0.0 0.0 0.0 1.0))
 
 ;; Update App system and globals
+;; TODO: REMOVE: move to world
 (define (update-app!)
   (set! current-ticks (SDL_GetTicks))
   (set! time-step (/ (- current-ticks previous-ticks) 1000.0))
@@ -346,4 +347,4 @@
 ;;-------------------------------------------------------------------------------
 ;; Automatically run App on load
 
-(run!)
+(step!)

@@ -24,7 +24,7 @@
 (init-globals)
 
 ;; Update the app Scheme source code
-(define (update-app)
+(define (update-sources)
   (define (update-source source)
     (if (zero? (shell-command (string-append "wget localhost:8000/" source " -O assets/src/" source)))
         (load (string-append "assets/src/" source))
