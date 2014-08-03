@@ -7,7 +7,8 @@
    (sdl2: sdl2)
    (sdl2: sdl2-image)
    (math: matrix)
-   (fusion: ios)))
+   (fusion: ios)
+   (fabric: algorithm/list)))
  (main-minimal
   (load
    (energy: remote/debuggee)))

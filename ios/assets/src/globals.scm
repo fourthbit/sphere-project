@@ -114,7 +114,6 @@
                    instance)))))
 
 
-
 ;; (cond-expand
 ;;  (host (define sprite-sampler* (alloc-GLuint* 1)))
 ;;  (else #!void))
@@ -125,11 +124,20 @@
 
 
 
-(define world (make-table))
+
+
+;; type: interactive
+(define-type interactive
+  (on-mouseover init: #f)
+  (on-mouseout init: #f)
+  (on-mousedown init: #f)
+  (on-mouseup init: #f)
+  (on-mousemove init: #f)
+  extender: define-type-of-interactive)
 
 
 ;; type: Sprite
-(define-type sprite
+(define-type-of-interactive sprite
   constructor: sprite-constructor
   uuid
   x
@@ -171,8 +179,22 @@
 
 
 
+;; type: World
+(define-type world
+  constructor: world-constructor
+  time
+  events
+  sprites)
 
-
+(define (make-world elements)
+  (world-constructor
+   '((current-ticks: 0)
+     (previous-ticks: 0)
+     (time-step: 0))
+   ;; bootstrapped world has no events in queue
+   '()
+   ;; elements get splitted into different kinds
+   elements))
 
 
 ; Vertex coordinates for the quad (two triangles)
@@ -199,12 +221,3 @@
                tx1 ty2 0.0 1.0
                tx2 ty2 0.0 1.0)))
 
-
-
-;;-------------------------------------------------------------------------------
-;; Time
-
-(define ellapsed-time 0)
-(define current-ticks 0)
-(define previous-ticks 0)
-(define time-step 0)
