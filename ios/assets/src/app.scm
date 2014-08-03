@@ -223,28 +223,19 @@
      (table-set! gl-uniforms 'perspective (glGetUniformLocation tex2d-program-id "perspectiveMatrix")))
     (glUseProgram 0)))
 
-;; Initialize the OpenGL buffers
-;; (define (init-buffers!)
-;;   (update-buffers!))
-
-;; Loads the texture used by the quad and creates a sampler if running on host
-;; (define (init-textures! window)
-;;   (table-set! gl-textures 'sprite1
-;;               (load-texture->gl-texture window "assets/images/lambda.png"))
-;;   ;; Sampler
-;;   (cond-expand
-;;    (host (glGenSamplers 1 sprite-sampler*)
-;;          (let ((sampler-id (*->GLuint sprite-sampler*)))
-;;            (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
-;;            (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
-;;            (glSamplerParameteri sampler-id GL_TEXTURE_MAG_FILTER GL_NEAREST)
-;;            (glSamplerParameteri sampler-id GL_TEXTURE_MIN_FILTER GL_NEAREST)))
-;;    (else #!void)))
-
+;; Initialize the Openg GL/ES graphics and assets
 (define (init-graphics!)
   (resize-graphics! screen-width screen-height)
   (init-shaders!)
-  (make-texture 'the-lambda "assets/images/lambda.png"));; TODO: make-texture? load-texture?
+  ;; Init sampler
+  (cond-expand
+   (host (glGenSamplers 1 sprite-sampler*)
+         (let ((sampler-id (*->GLuint sprite-sampler*)))
+           (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
+           (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
+           (glSamplerParameteri sampler-id GL_TEXTURE_MAG_FILTER GL_NEAREST)
+           (glSamplerParameteri sampler-id GL_TEXTURE_MIN_FILTER GL_NEAREST)))
+   (else #!void)))
 
 ;; Handle window resizing and orientation
 (define (resize-graphics! screen-width screen-height)
@@ -260,28 +251,12 @@
                                (matrix:map exact->inexact
                                            perspective-matrix))))
 
-;; Updates VBOs from the static vectors defined at the top of the file
-;; (define (update-buffers!)
-;;   (table-set! gl-buffers 'tri-vertices (f32vector->gl-buffer triangle-data-vector))
-;;   (table-set! gl-buffers 'quad-vertices (f32vector->gl-buffer quad-data-vector)))
-
 ;; Tear down all OpenGL structures
 (define (destroy-graphics!)
   (table-for-each (lambda (buffer) (glDeleteBuffers 1 buffer)) gl-buffers)
   (set! gl-buffers (make-table))
   (table-for-each (lambda (buffer) (glDeleteTextures 1 buffer)) gl-textures)
   (set! gl-textures (make-table)))
-
-;; (define (draw-triangle)
-;;   (gl-draw-vbo (table-ref gl-buffers 'tri-vertices)
-;;                (table-ref gl-programs 'color)
-;;                GL_TRIANGLES 3
-;;                (lambda ()
-;;                  (check-gl-error
-;;                   (glUniformMatrix4fv (table-ref gl-uniforms 'perspective)
-;;                                       1 GL_FALSE gl-perspective-matrix))
-;;                  (glEnableVertexAttribArray 0)
-;;                  (glVertexAttribPointer 0 4 GL_FLOAT GL_TRUE 0 #f))))
 
 ;;! Draw the given sprite in the current window
 (define (draw-sprite sprite)
@@ -310,11 +285,12 @@
   (glEnable GL_BLEND)
   (glDisable GL_CULL_FACE)
   (glCullFace GL_BACK)
+  ;; Background
   (apply glClearColor current-color)
   (glClear (bitwise-ior GL_COLOR_BUFFER_BIT))
-  ;; TODO!!! handle different assets
-  ;;(draw-triangle)
+  ;; Draw the different elements
   (for-each draw-sprite (world-sprites world))
+  ;; Render
   (SDL_GL_SwapWindow window)
   world)
 
@@ -342,5 +318,6 @@
 (make-app
  create-world:
  (lambda (world)
+   (make-texture 'the-lambda "assets/images/lambda.png")
    (make-world (list (make-sprite 50.0 50.0 'the-lambda)
                      (make-sprite 250.0 250.0 'the-lambda)))))

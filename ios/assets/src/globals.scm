@@ -1,4 +1,4 @@
-;; Executes the given form and checks if GL's state is valid
+;;! Executes the given form and checks if GL's state is valid
 (define-macro (check-gl-error exp)
   `(let* ((result ,exp)
           (error (glGetError)))
@@ -9,26 +9,26 @@
 
 
 ;;-------------------------------------------------------------------------------
-;; SDL
+;;!! SDL
 
 (define window #f)
 (define screen-width #f)
 (define screen-height #f)
 
 ;;-------------------------------------------------------------------------------
-;; OpenGL
+;;!! OpenGL
 
-;; Matrices
+;;! Matrices
 (define perspective-matrix #f)
 (define gl-perspective-matrix #f)
 
-;; Shader programs
+;;! Shader programs
 (define gl-programs (make-table))
 
-;; Buffers
+;;! Buffers
 (define gl-buffers (make-table))
 
-;; type: Buffers
+;;! Type: Buffers
 (define-type buffer
   constructor: buffer-constructor
   uuid
@@ -40,33 +40,33 @@
 (define make-buffer
   (let ((f32vector->gl-buffer
          (lambda* (vertex-data-vector (buffer-type GL_STATIC_DRAW))
-             (let ((buffer-id* (alloc-GLuint* 1)))
-               (glGenBuffers 1 buffer-id*)
-               (glBindBuffer GL_ARRAY_BUFFER (*->GLuint buffer-id*))
-               (glBufferData GL_ARRAY_BUFFER
-                             (* (f32vector-length vertex-data-vector) GLfloat-size)
-                             (f32vector->GLfloat* vertex-data-vector)
-                             GL_STATIC_DRAW)
-               (glBindBuffer GL_ARRAY_BUFFER 0)
-               buffer-id*))))
+           (let ((buffer-id* (alloc-GLuint* 1)))
+             (glGenBuffers 1 buffer-id*)
+             (glBindBuffer GL_ARRAY_BUFFER (*->GLuint buffer-id*))
+             (glBufferData GL_ARRAY_BUFFER
+                           (* (f32vector-length vertex-data-vector) GLfloat-size)
+                           (f32vector->GLfloat* vertex-data-vector)
+                           GL_STATIC_DRAW)
+             (glBindBuffer GL_ARRAY_BUFFER 0)
+             buffer-id*))))
     ;; TODO: handle usage and data type
     (lambda* (uuid type data (usage 'static))
-        (let ((instance (buffer-constructor
-                         uuid
-                         (case type
-                           ((f32vector)
-                            (f32vector->gl-buffer data))
-                           (else (error-log "make-buffer - unknown data type")))
-                         usage
-                         type
-                         data)))
-          (table-set! gl-buffers uuid instance)
-          instance))))
+      (let ((instance (buffer-constructor
+                       uuid
+                       (case type
+                         ((f32vector)
+                          (f32vector->gl-buffer data))
+                         (else (error-log "make-buffer - unknown data type")))
+                       usage
+                       type
+                       data)))
+        (table-set! gl-buffers uuid instance)
+        instance))))
 
-;; Textures
+;;! OpenGL Textures registry
 (define gl-textures (make-table))
 
-;; type: Texture
+;;! Type: Texture
 (define-type texture
   constructor: texture-constructor
   id ;; the OpenGL identifier
@@ -74,8 +74,7 @@
   width
   height)
 
-;; make-texture
-;; Textures are automatically registered and can be later accessed from the global table
+;;! Textures are automatically registered and can be later accessed from the global table
 (define make-texture
   (let ((load-texture->gl-texture
          (lambda (path)
@@ -113,20 +112,19 @@
                    (if register? (table-set! gl-textures key instance))
                    instance)))))
 
+;;! Texture sampler (OpenGL 4.x)
+(cond-expand
+ (host (define texture-sampler* (alloc-GLuint* 1)))
+ (else #!void))
 
-;; (cond-expand
-;;  (host (define sprite-sampler* (alloc-GLuint* 1)))
-;;  (else #!void))
-
-
-;; Uniform variables
+;;! Uniform variables
 (define gl-uniforms (make-table))
 
 
+;;-------------------------------------------------------------------------------
+;;!! World elements
 
-
-
-;; type: interactive
+;;! Type: interactive
 (define-type interactive
   (on-mouseover init: #f)
   (on-mouseout init: #f)
@@ -135,8 +133,7 @@
   (on-mousemove init: #f)
   extender: define-type-of-interactive)
 
-
-;; type: Sprite
+;;! Type: Sprite
 (define-type-of-interactive sprite
   constructor: sprite-constructor
   uuid
@@ -155,7 +152,7 @@
   (let* ((tex (table-ref gl-textures texture-key #f))
          (texture-w (texture-width tex))
          (texture-h (texture-height tex)))
-   (sprite-constructor
+  (sprite-constructor
     (random-integer 99999999999999999999) ;; UID: TODO
     x
     y
@@ -176,10 +173,7 @@
                                 qx1 qy2 0.0 1.0
                                 qx2 qy2 1.0 1.0)))))))
 
-
-
-
-;; type: World
+;;! Type: World
 (define-type world
   constructor: world-constructor
   time
@@ -195,29 +189,3 @@
    '()
    ;; elements get splitted into different kinds
    elements))
-
-
-; Vertex coordinates for the quad (two triangles)
-(define qx1 50.0)
-(define qy1 50.0)
-
-(define qx2 300.0)
-(define qy2 300.0)
-
-(define quad-data-vector (f32vector qx1 qy1 0.0 0.0
-                                    qx1 qy2 0.0 1.0
-                                    qx2 qy1 1.0 0.0
-
-                                    qx2 qy1 1.0 0.0
-                                    qx1 qy2 0.0 1.0
-                                    qx2 qy2 1.0 1.0))
-
-(define triangle-data-vector
-  (let ((tx1 0.0)
-        (ty1 0.0)
-        (tx2 640.0)
-        (ty2 960.0))
-    (f32vector tx1 ty1 0.0 1.0
-               tx1 ty2 0.0 1.0
-               tx2 ty2 0.0 1.0)))
-
