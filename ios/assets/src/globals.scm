@@ -152,9 +152,8 @@
 ;; .parameter y The y coordinate of the top-left corner
 ;; .parameter texture/key The texture or the texture key associated to the sprite
 (define (make-sprite x y texture/key)
-  (let* ((tex (cond ((texture? texture/key)
-                     texture/key)
-                    ((table-ref gl-textures texture-key #f) => values)
+  (let* ((tex (cond ((texture? texture/key) texture/key)
+                    ((table-ref gl-textures texture/key #f) => values)
                     (else
                      (error-log make-sprite:
                                 "texture/key parameter requires either a texture or a texture key"))))
@@ -182,8 +181,8 @@
                                        qx2 qy1 1.0 0.0
                                        qx1 qy2 0.0 1.0
                                        qx2 qy2 1.0 1.0)))))))
-    ;; Will to automatically remove OpenGL/ES vertex buffer when this
-    ;; instance is destroyed
+    ;; Will to automatically remove the associated OpenGL/ES vertex buffer that was created
+    ;; along with this sprite, as soon as this instance is destroyed
     (make-will sprite
                (lambda (s)
                  (table-set! gl-buffers buffer-uuid)))
