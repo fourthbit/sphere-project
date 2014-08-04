@@ -63,10 +63,10 @@
 (define* (make-app (create-world:))
   (unless (procedure? create-world) (error-log make-app: "create-world parameter should be a procedure"))
   (when (zero? (SDL_WasInit 0)) (init-app!))
-  (draw-world-internal
-   (update-world-internal
-    (put-world-events-internal
-     (create-world-internal create-world)))))
+  (draw-world-wrapper
+   (update-world-wrapper
+    (put-world-events-wrapper
+     (create-world-wrapper create-world)))))
 
 ;; Application main loop
 ;; TODO
@@ -127,7 +127,7 @@
               1))))))
 
 ;; TODO: decouple form graphics
-(define (put-world-events-internal world)
+(define (put-world-events-wrapper world)
   (define (get-key-code event)
     (SDL_Keysym-sym
      (SDL_KeyboardEvent-keysym
@@ -276,7 +276,7 @@
                  (glBindTexture GL_TEXTURE_2D (*->GLuint (texture-id (table-ref gl-textures 'the-lambda)))))))
 
 ;;! Draw all elements in the world (internal wrapper)
-(define (draw-world-internal world)
+(define (draw-world-wrapper world)
   (define current-color (list (random-real) (random-real) (random-real) 1.0))
   (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
   (glEnable GL_BLEND)
@@ -294,11 +294,11 @@
 ;;-------------------------------------------------------------------------------
 ;; Application World
 
-(define (create-world-internal create-proc)
+(define (create-world-wrapper create-proc)
   (create-proc
    (make-world '())))
 
-(define (update-world-internal world)
+(define (update-world-wrapper world)
   (let* ((time (world-time world))
          (current-ticks (SDL_GetTicks))
          (previous-ticks (cadr (assq current-ticks: time)))
