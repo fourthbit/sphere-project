@@ -65,7 +65,7 @@
   (when (zero? (SDL_WasInit 0)) (init-app!))
   (draw-world-wrapper
    (update-world-wrapper
-    (put-world-events-wrapper
+    (process-events-wrapper
      (create-world-wrapper create-world)))))
 
 ;; Application main loop
@@ -126,57 +126,70 @@
               ;; No special processing, add it to the event queue
               1))))))
 
-;; TODO: decouple form graphics
-(define (put-world-events-wrapper world)
+;; Process events and input
+(define (process-events-wrapper world)
   (define (get-key-code event)
     (SDL_Keysym-sym
      (SDL_KeyboardEvent-keysym
       (SDL_Event-key event))))
   (let ((event (alloc-SDL_Event))
         (filled #f))
-    (let ev-poll ()
-      (when (= 1 (SDL_PollEvent event))
-            (let ((event-type (SDL_Event-type event)))
-              (cond
-               ((or (= SDL_QUIT event-type)
-                    (and
-                     (= SDL_KEYUP event-type)
-                     (or (= (get-key-code event) SDLK_ESCAPE)
-                         (= (get-key-code event) SDLK_AC_BACK))))
-                (SDL_Quit))
-               ;; Touch events
-               ((= SDL_FINGERMOTION event-type)
-                'ignore)
-               ((= SDL_FINGERDOWN event-type)
-                'ignore)
-               ((= SDL_FINGERUP event-type)
-                ;; (let ((finger-event (SDL_Event-tfinger event)))
-                ;;   (log "Finger -"
-                ;;        "X:" (SDL_TouchFingerEvent-x finger-event)
-                ;;        "Y:" (SDL_TouchFingerEvent-y finger-event)))
-                'ignore)
-               ;; Mouse events
-               ((= SDL_MOUSEMOTION event-type)
-                'ignore)
-               ((= SDL_MOUSEBUTTONDOWN event-type)
-                'ignore)
-               ((= SDL_MOUSEBUTTONUP event-type)
-                (let ((mouse-event (SDL_Event-button event)))
-                  (log "Mouse button -"
-                       "X:" (SDL_MouseButtonEvent-x mouse-event)
-                       "Y:" (SDL_MouseButtonEvent-y mouse-event))))
-               ;; Window events
-               ((= SDL_WINDOWEVENT event-type)
-                (let ((window-event (SDL_WindowEvent-event (SDL_Event-window event))))
-                  (if (or (= SDL_WINDOWEVENT_SIZE_CHANGED window-event)
-                          (= SDL_WINDOWEVENT_RESIZED window-event))
-                      (let ((resize (SDL_Event-window event)))
-                        (resize-graphics! (SDL_WindowEvent-data1 resize)
-                                          (SDL_WindowEvent-data2 resize)))
-                      'ignore)))
-               (else
-                (log "Unhandled event - " event-type))))
-            (ev-poll)))
+    (let ev-poll ((output '()))
+      (if (= 1 (SDL_PollEvent event))
+          (let ((event-type (SDL_Event-type event)))
+            (cond
+             ((or (= SDL_QUIT event-type)
+                  (and
+                   (= SDL_KEYUP event-type)
+                   (or (= (get-key-code event) SDLK_ESCAPE)
+                       (= (get-key-code event) SDLK_AC_BACK))))
+              (SDL_Quit))
+             ;; Touch events
+             ((= SDL_FINGERMOTION event-type)
+              ;;(ev-poll (cons '(fingermotion) output))
+              (ev-poll output))
+             ((= SDL_FINGERDOWN event-type)
+              ;;(ev-poll (cons '(fingerdown) output))
+              (ev-poll output))
+             ((= SDL_FINGERUP event-type)
+              ;; (let ((finger-event (SDL_Event-tfinger event)))
+              ;;   (log "Finger -"
+              ;;        "X:" (SDL_TouchFingerEvent-x finger-event)
+              ;;        "Y:" (SDL_TouchFingerEvent-y finger-event)))
+              ;;(ev-poll (cons '(fingerup) output))
+              (ev-poll output))
+             ;; Mouse events
+             ((= SDL_MOUSEMOTION event-type)
+              (let ((mouse-event (SDL_Event-motion event)))
+                (let ((x (SDL_MouseMotionEvent-x mouse-event))
+                      (y (SDL_MouseMotionEvent-y mouse-event))
+                      (x-relative (SDL_MouseMotionEvent-xrel mouse-event))
+                      (y-relative (SDL_MouseMotionEvent-yrel mouse-event)))
+                  (ev-poll (cons `(mousemotion x: ,x y: ,y x-relative: ,x-relative y-relative: ,y-relative)
+                                 output)))))
+             ((= SDL_MOUSEBUTTONDOWN event-type)
+              (let ((mouse-event (SDL_Event-button event)))
+                (let ((x (SDL_MouseButtonEvent-x mouse-event))
+                      (y (SDL_MouseButtonEvent-y mouse-event)))
+                  (ev-poll (cons `(mousedown x: ,x y: ,y) output)))))
+             ((= SDL_MOUSEBUTTONUP event-type)
+              (let ((mouse-event (SDL_Event-button event)))
+                (let ((x (SDL_MouseButtonEvent-x mouse-event))
+                      (y (SDL_MouseButtonEvent-y mouse-event)))
+                  (ev-poll (cons `(mouseup x: ,x y: ,y) output)))))
+             ;; Window events
+             ((= SDL_WINDOWEVENT event-type)
+              (let ((window-event (SDL_WindowEvent-event (SDL_Event-window event))))
+                (if (or (= SDL_WINDOWEVENT_SIZE_CHANGED window-event)
+                        (= SDL_WINDOWEVENT_RESIZED window-event))
+                    (let* ((resize (SDL_Event-window event))
+                           (width (SDL_WindowEvent-data1 resize))
+                           (height (SDL_WindowEvent-data2 resize)))
+                      (ev-poll (cons `(window-resized width: ,width height: ,height) output))))))
+             (else
+              (log "Unhandled event - " event-type)
+              (ev-poll output))))
+          (world-events-set! world (reverse! output))))
     world))
 
 ;;-------------------------------------------------------------------------------
@@ -299,15 +312,121 @@
    (make-world '())))
 
 (define (update-world-wrapper world)
-  (let* ((time (world-time world))
-         (current-ticks (SDL_GetTicks))
-         (previous-ticks (cadr (assq current-ticks: time)))
-         (time-step (/ (- current-ticks previous-ticks) 1000.0)))
-    (world-time-set! world
-                     `((current-ticks: ,current-ticks)
-                       (previous-ticks: ,previous-ticks)
-                       (time-step: ,time-step)))
-    world))
+  (let ((events (world-events world))
+        (sprites (world-sprites world)))
+    (let recur ((events events)
+                (world world))
+      (let ((handle-event-up&down
+             (lambda (event-proc) ;; produce a lambda with event-proc specialization
+               (lambda (event)
+                 (recur
+                  (cdr events)
+                  (let ((x (cadr (memq x: event)))
+                        (y (cadr (memq y: event))))
+                    ;; If a world isn't produced, then pass along the original one
+                    (aif new-world world?
+                         (call/cc
+                          (lambda (leave) ;; Consume the event if captured by one element
+                            (fold (lambda (element world)
+                                    (aif proc (event-proc element)
+                                         (let ((element-x (sprite-x element))
+                                               (element-y (sprite-y element))
+                                               (element-width (sprite-width element))
+                                               (element-height (sprite-height element)))
+                                           (if (and (> x element-x)
+                                                    (> y element-y)
+                                                    (< x (+ element-x element-width))
+                                                    (< y (+ element-y element-height)))
+                                               (leave (proc element world event))))
+                                         world))
+                                  world
+                                  sprites)))
+                         new-world
+                         world))))))
+            (handle-event-motion
+             (lambda (event)
+               (recur
+                (cdr events)
+                (let ((x (cadr (memq x: event)))
+                      (y (cadr (memq y: event)))
+                      (x-relative (cadr (memq x-relative: event)))
+                      (y-relative (cadr (memq y-relative: event))))
+                  (aif new-world world?
+                       (call/cc
+                        (lambda (leave) ;; Consume the event once is captured by one element
+                          (fold (lambda (element world)
+                                  (let ((mouseover-proc (interactive-on-mouseover element))
+                                        (mouseout-proc (interactive-on-mouseout element))
+                                        (mousemove-proc (interactive-on-mousemove element)))
+                                    (if (or mouseover-proc mouseout-proc mousemove-proc)
+                                        (let ((element-x (sprite-x element))
+                                              (element-y (sprite-y element))
+                                              (element-width (sprite-width element))
+                                              (element-height (sprite-height element))
+                                              (x-previous (- x x-relative))
+                                              (y-previous (- y y-relative)))
+                                          (let ((element-x2 (+ element-x element-width))
+                                                (element-y2 (+ element-y element-height)))
+                                            (cond
+                                             ;; If mouse entered the element (wasn't previously inside)
+                                             ((and (> x element-x)
+                                                   (> y element-y)
+                                                   (< x element-x2)
+                                                   (< y element-y2)
+                                                   (not (and (> x-previous element-x)
+                                                             (> y-previous element-y)
+                                                             (< x-previous element-x2)
+                                                             (< y-previous element-y2))))
+                                              (leave (mouseover-proc element world event)))
+                                             ;; If mouse left the element (was previously inside)
+                                             ((and (> x-previous element-x)
+                                                   (> y-previous element-y)
+                                                   (< x-previous element-x2)
+                                                   (< y-previous element-y2)
+                                                   (not (and (> x element-x)
+                                                             (> y element-y)
+                                                             (< x element-x2)
+                                                             (< y element-y2))))
+                                              (leave (mouseout-proc element world event)))
+                                             ;; If mouse is moving within the element (is AND was inside)
+                                             ((and (> x-previous element-x)
+                                                   (> y-previous element-y)
+                                                   (< x-previous element-x2)
+                                                   (< y-previous element-y2)
+                                                   (> x element-x)
+                                                   (> y element-y)
+                                                   (< x element-x2)
+                                                   (< y element-y2))
+                                              (leave (mousemove-proc element world event)))
+                                             (else world)))))))
+                                world
+                                sprites)))
+                       new-world
+                       world))))))
+        (cond ((null? events) #!void)
+              ((car events) (lambda (e) (eq? (car e) 'mousedown)) =>
+               (handle-event-up&down interactive-on-mousedown))
+              ((car events) (lambda (e) (eq? (car e) 'mouseup)) =>
+               (handle-event-up&down interactive-on-mouseup))
+              ((car events) (lambda (e) (eq? (car e) 'mousemotion)) =>
+               handle-event-motion)
+              (else
+               (recur (cdr events) world)))))
+    ;; Handle resize event
+    (aif resize (assq 'window-resized events)
+         (let ((width (cadr (memq width: resize-event)))
+               (height (cadr (memq height: resize-event))))
+           (resize-graphics! width height)))
+    ;; Update world time
+    (let* ((time (world-time world))
+           (current-ticks (SDL_GetTicks))
+           (previous-ticks (cadr (assq current-ticks: time)))
+           (time-step (/ (- current-ticks previous-ticks) 1000.0)))
+      (world-time-set! world
+                       `((current-ticks: ,current-ticks)
+                         (previous-ticks: ,previous-ticks)
+                         (time-step: ,time-step)))
+      world)))
 
 ;;-------------------------------------------------------------------------------
 ;; The App
@@ -317,5 +436,14 @@
    create-world:
    (lambda (world)
      (let ((texture (make-texture 'the-lambda "assets/images/lambda.png")))
-       (make-world (list (make-sprite 50.0 50.0 texture)
+       (make-world (list (make-sprite 50.0 50.0 texture
+                                      on-mouseup: (lambda (self world event)
+                                                    (println "Mouse up within sprite: ")
+                                                    (world-sprites-set! world
+                                                                        (cons (make-sprite 50.0 550.0 texture)
+                                                                              (world-sprites world)))
+                                                    world)
+                                      on-mouseover: (lambda args (println "MOUSE OVER"))
+                                      on-mouseout: (lambda args (println "MOUSE OUT"))
+                                      on-mousemove: (lambda args (println "MOUSE MOVE")))
                          (make-sprite 250.0 250.0 texture)))))))

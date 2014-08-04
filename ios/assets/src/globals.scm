@@ -151,7 +151,12 @@
 ;; .parameter x The x coordinate of the top-left corner
 ;; .parameter y The y coordinate of the top-left corner
 ;; .parameter texture/key The texture or the texture key associated to the sprite
-(define (make-sprite x y texture/key)
+(define* (make-sprite x y texture/key
+                      (on-mouseover:)
+                      (on-mouseout:)
+                      (on-mousedown:)
+                      (on-mouseup:)
+                      (on-mousemove:))
   (let* ((tex (cond ((texture? texture/key) texture/key)
                     ((table-ref gl-textures texture/key #f) => values)
                     (else
@@ -181,6 +186,11 @@
                                        qx2 qy1 1.0 0.0
                                        qx1 qy2 0.0 1.0
                                        qx2 qy2 1.0 1.0)))))))
+    (when on-mouseover (interactive-on-mouseover-set! sprite on-mouseover))
+    (when on-mouseout (interactive-on-mouseout-set! sprite on-mouseout))
+    (when on-mousedown (interactive-on-mousedown-set! sprite on-mousedown))
+    (when on-mouseup (interactive-on-mouseup-set! sprite on-mouseup))
+    (when on-mousemove (interactive-on-mousemove-set! sprite on-mousemove))
     ;; Will to automatically remove the associated OpenGL/ES vertex buffer that was created
     ;; along with this sprite, as soon as this instance is destroyed
     (make-will sprite
