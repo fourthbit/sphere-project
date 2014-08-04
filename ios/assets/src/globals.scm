@@ -126,12 +126,12 @@
 
 ;;! Type: interactive
 (define-type interactive
+  extender: define-type-of-interactive
   (on-mouseover init: #f)
   (on-mouseout init: #f)
   (on-mousedown init: #f)
   (on-mouseup init: #f)
-  (on-mousemove init: #f)
-  extender: define-type-of-interactive)
+  (on-mousemove init: #f))
 
 ;;! Type: Sprite
 (define-type-of-interactive sprite
@@ -147,31 +147,47 @@
   texture-id
   buffer)
 
-;; TODO: WHEN SPRITE IS DESTROYED, SO IS THE BUFFER (USE WILLS)
-(define (make-sprite x y texture-key)
-  (let* ((tex (table-ref gl-textures texture-key #f))
+;; make-sprite
+;; .parameter x The x coordinate of the top-left corner
+;; .parameter y The y coordinate of the top-left corner
+;; .parameter texture/key The texture or the texture key associated to the sprite
+(define (make-sprite x y texture/key)
+  (let* ((tex (cond ((texture? texture/key)
+                     texture/key)
+                    ((table-ref gl-textures texture-key #f) => values)
+                    (else
+                     (error-log make-sprite:
+                                "texture/key parameter requires either a texture or a texture key"))))
          (texture-w (texture-width tex))
-         (texture-h (texture-height tex)))
-  (sprite-constructor
-    (random-integer 99999999999999999999) ;; UID: TODO
-    x
-    y
-    (when tex texture-w)
-    (when tex texture-h)
-    texture-key
-    (texture-id tex)
-    (make-buffer (random-integer 9999999999999999999) ;; UID: TODO
-                 'f32vector
-                 (let ((qx1 x)
-                       (qy1 y))
-                   (let ((qx2 (+ qx1 texture-w))
-                         (qy2 (+ qy1 texture-h)))
-                     (f32vector qx1 qy1 0.0 0.0
-                                qx1 qy2 0.0 1.0
-                                qx2 qy1 1.0 0.0
-                                qx2 qy1 1.0 0.0
-                                qx1 qy2 0.0 1.0
-                                qx2 qy2 1.0 1.0)))))))
+         (texture-h (texture-height tex))
+         (buffer-uuid (random-integer 9999999999999999999)) ;; UID: TODO
+         (sprite
+          (sprite-constructor
+           (random-integer 99999999999999999999) ;; UID: TODO
+           x
+           y
+           (when tex texture-w)
+           (when tex texture-h)
+           texture-key
+           (texture-id tex)
+           (make-buffer buffer-uuid
+                        'f32vector
+                        (let ((qx1 x)
+                              (qy1 y))
+                          (let ((qx2 (+ qx1 texture-w))
+                                (qy2 (+ qy1 texture-h)))
+                            (f32vector qx1 qy1 0.0 0.0
+                                       qx1 qy2 0.0 1.0
+                                       qx2 qy1 1.0 0.0
+                                       qx2 qy1 1.0 0.0
+                                       qx1 qy2 0.0 1.0
+                                       qx2 qy2 1.0 1.0)))))))
+    ;; Will to automatically remove OpenGL/ES vertex buffer when this
+    ;; instance is destroyed
+    (make-will sprite
+               (lambda (s)
+                 (table-set! gl-buffers buffer-uuid)))
+    sprite))
 
 ;;! Type: World
 (define-type world

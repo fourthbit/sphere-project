@@ -60,10 +60,9 @@
   (exit))
 
 ;;! Single command for running the app and initializing if necessary
-(define* (make-app (create-world: #f))
+(define* (make-app (create-world:))
   (unless (procedure? create-world) (error-log make-app: "create-world parameter should be a procedure"))
-  (when (zero? (SDL_WasInit 0))
-        (init-app!))
+  (when (zero? (SDL_WasInit 0)) (init-app!))
   (draw-world-internal
    (update-world-internal
     (put-world-events-internal
@@ -183,48 +182,46 @@
 ;;-------------------------------------------------------------------------------
 ;; Graphics
 
-;; Loads the shaders and sets the location of the necessary attributes
-(define (init-shaders!)
-  ;; Creates a new program with the given vertex and shader files paths.
-  ;; A callback function to set up the attributes must be provided
-  (let ((color-program-id
-         (gl-create-program (list (gl-create-shader
-                                   GL_VERTEX_SHADER
-                                   (load-text-file "assets/shaders/color.vert"))
-                                  (gl-create-shader
-                                   GL_FRAGMENT_SHADER
-                                   (load-text-file "assets/shaders/color.frag")))
-                            (lambda (program-id)
-                              (glBindAttribLocation program-id 0 "position"))
-                            delete-shaders?: #t)))
-    (table-set! gl-programs 'color color-program-id)
-    (glUseProgram color-program-id)
-    (check-gl-error
-     (table-set! gl-uniforms 'perspective
-                 (glGetUniformLocation color-program-id "perspectiveMatrix")))
-    (glUseProgram 0))
-  (let ((tex2d-program-id
-         (gl-create-program (list (gl-create-shader
-                                   GL_VERTEX_SHADER
-                                   (load-text-file "assets/shaders/tex2d.vert"))
-                                  (gl-create-shader
-                                   GL_FRAGMENT_SHADER
-                                   (load-text-file "assets/shaders/tex2d.frag")))
-                            (lambda (program-id)
-                              (glBindAttribLocation program-id 0 "position")
-                              (glBindAttribLocation program-id 1 "texCoord"))
-                            delete-shaders?: #t)))
-    (table-set! gl-programs 'tex2d tex2d-program-id)
-    (glUseProgram tex2d-program-id)
-    (check-gl-error
-     (table-set! gl-uniforms 'texture
-                 (glGetUniformLocation tex2d-program-id "colorTexture")))
-    (check-gl-error
-     (table-set! gl-uniforms 'perspective (glGetUniformLocation tex2d-program-id "perspectiveMatrix")))
-    (glUseProgram 0)))
-
 ;; Initialize the Openg GL/ES graphics and assets
 (define (init-graphics!)
+  (define (init-shaders!)
+    ;; Creates a new program with the given vertex and shader files paths.
+    ;; A callback function to set up the attributes must be provided
+    (let ((color-program-id
+           (gl-create-program (list (gl-create-shader
+                                     GL_VERTEX_SHADER
+                                     (load-text-file "assets/shaders/color.vert"))
+                                    (gl-create-shader
+                                     GL_FRAGMENT_SHADER
+                                     (load-text-file "assets/shaders/color.frag")))
+                              (lambda (program-id)
+                                (glBindAttribLocation program-id 0 "position"))
+                              delete-shaders?: #t)))
+      (table-set! gl-programs 'color color-program-id)
+      (glUseProgram color-program-id)
+      (check-gl-error
+       (table-set! gl-uniforms 'perspective
+                   (glGetUniformLocation color-program-id "perspectiveMatrix")))
+      (glUseProgram 0))
+    (let ((tex2d-program-id
+           (gl-create-program (list (gl-create-shader
+                                     GL_VERTEX_SHADER
+                                     (load-text-file "assets/shaders/tex2d.vert"))
+                                    (gl-create-shader
+                                     GL_FRAGMENT_SHADER
+                                     (load-text-file "assets/shaders/tex2d.frag")))
+                              (lambda (program-id)
+                                (glBindAttribLocation program-id 0 "position")
+                                (glBindAttribLocation program-id 1 "texCoord"))
+                              delete-shaders?: #t)))
+      (table-set! gl-programs 'tex2d tex2d-program-id)
+      (glUseProgram tex2d-program-id)
+      (check-gl-error
+       (table-set! gl-uniforms 'texture
+                   (glGetUniformLocation tex2d-program-id "colorTexture")))
+      (check-gl-error
+       (table-set! gl-uniforms 'perspective (glGetUniformLocation tex2d-program-id "perspectiveMatrix")))
+      (glUseProgram 0)))
   (resize-graphics! screen-width screen-height)
   (init-shaders!)
   ;; Init sampler
@@ -315,9 +312,10 @@
 ;;-------------------------------------------------------------------------------
 ;; The App
 
-(make-app
- create-world:
- (lambda (world)
-   (make-texture 'the-lambda "assets/images/lambda.png")
-   (make-world (list (make-sprite 50.0 50.0 'the-lambda)
-                     (make-sprite 250.0 250.0 'the-lambda)))))
+(define app
+  (make-app
+   create-world:
+   (lambda (world)
+     (let ((texture (make-texture 'the-lambda "assets/images/lambda.png")))
+       (make-world (list (make-sprite 50.0 50.0 texture)
+                         (make-sprite 250.0 250.0 texture)))))))
