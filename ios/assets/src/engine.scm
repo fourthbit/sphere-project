@@ -297,7 +297,7 @@
                  (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size)
                                         (integer->void* (* 2 GLfloat-size)))
                  (glActiveTexture GL_TEXTURE0)
-                 (glBindTexture GL_TEXTURE_2D (*->GLuint (texture-id (table-ref *gl-textures* 'the-lambda)))))))
+                 (glBindTexture GL_TEXTURE_2D (*->GLuint (sprite-texture-id sprite))))))
 
 ;;! Draw all elements in the world (internal wrapper)
 (define (draw-world-wrapper pre-render-proc post-render-proc world)

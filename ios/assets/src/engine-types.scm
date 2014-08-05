@@ -48,33 +48,34 @@
 (define make-texture
   (let ((load-texture->gl-texture
          (lambda (path)
-           (let* ((texture-img* (IMG_Load path)) ;; default format: ARGB8888
-                  (texture-id* (alloc-GLuint* 1))
-                  (texture-height (SDL_Surface-h texture-img*))
-                  (texture-width (SDL_Surface-w texture-img*)))
-             ;; Alternative method (using GL_RGBA). Remember that PixelFormat is backwards in SDL
-             ;; (SDL_ConvertSurfaceFormat texture-img-unformatted* SDL_PIXELFORMAT_ABGR8888 0)
-             ;; Generate and bind texture
-             (glGenTextures 1 texture-id*)
-             (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
-             ;; Check errors
-             (check-gl-error
-              (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA ; internal format
-                            texture-width texture-height
-                            0 GL_BGRA_EXT GL_UNSIGNED_BYTE
-                            (SDL_Surface-pixels texture-img*)))
-             ;; FILTER: Necessary for NPOT textures in GLES2
-             (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
-             (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
-             ;; WRAP: Necessary for NPOT textures in GLES2
-             (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
-             (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
-             ;; Unbind and free the surface
-             (glBindTexture GL_TEXTURE_2D 0)
-             (SDL_FreeSurface texture-img*)
-             (values texture-id*
-                     texture-width
-                     texture-height)))))
+           (let ((texture-img* (IMG_Load path)) ;; default format: ARGB8888
+                 (texture-id* (alloc-GLuint* 1)))
+             (unless texture-img* (error-log (IMG_GetError)))
+             (let ((texture-height (SDL_Surface-h texture-img*))
+                   (texture-width (SDL_Surface-w texture-img*)))
+               ;; Alternative method (using GL_RGBA). Remember that PixelFormat is backwards in SDL
+               ;; (SDL_ConvertSurfaceFormat texture-img-unformatted* SDL_PIXELFORMAT_ABGR8888 0)
+               ;; Generate and bind texture
+               (glGenTextures 1 texture-id*)
+               (glBindTexture GL_TEXTURE_2D (*->GLuint texture-id*))
+               ;; Check errors
+               (check-gl-error
+                (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA ; internal format
+                              texture-width texture-height
+                              0 GL_BGRA_EXT GL_UNSIGNED_BYTE
+                              (SDL_Surface-pixels texture-img*)))
+               ;; FILTER: Necessary for NPOT textures in GLES2
+               (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
+               (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
+               ;; WRAP: Necessary for NPOT textures in GLES2
+               (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
+               (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
+               ;; Unbind and free the surface
+               (glBindTexture GL_TEXTURE_2D 0)
+               (SDL_FreeSurface texture-img*)
+               (values texture-id*
+                       texture-width
+                       texture-height))))))
     (lambda* (key path (register?: #t))
         (receive (texture-id* w h)
                  (load-texture->gl-texture path)
