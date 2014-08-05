@@ -33,6 +33,8 @@
           (println message))))
   ;; gl-utils.scm
   (update-source "gl-utils.scm")
+  ;; engine.scm
+  (update-source "engine.scm")
   ;; app.scm
   (update-source "app.scm"))
 
