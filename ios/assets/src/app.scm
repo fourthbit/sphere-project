@@ -1,5 +1,5 @@
 ;;-------------------------------------------------------------------------------
-;; The App
+;; App
 
 (define app
   (make-app
@@ -16,4 +16,15 @@
                                       on-mouseover: (lambda args (println "MOUSE OVER"))
                                       on-mouseout: (lambda args (println "MOUSE OUT"))
                                       on-mousemove: (lambda args (println "MOUSE MOVE")))
-                         (make-sprite 250.0 250.0 texture)))))))
+                         (make-sprite 250.0 250.0 texture)))))
+   pre-render: (lambda (world)
+                 ;;(define current-color (list (random-real) (random-real) (random-real) 1.0))
+                 (define current-color (list 1.0 0.0 0.0 1.0))
+                 (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
+                 (glEnable GL_BLEND)
+                 (glDisable GL_CULL_FACE)
+                 (glCullFace GL_BACK)
+                 (apply glClearColor current-color)
+                 (glClear (bitwise-ior GL_COLOR_BUFFER_BIT)))))
+
+(app)

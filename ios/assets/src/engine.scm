@@ -60,34 +60,33 @@
   (exit))
 
 ;;! Single command for running the app and initializing if necessary
-(define* (make-app (create-world:))
+(define* (make-app (create-world:)
+                   (update-world: (lambda (world) world))
+                   (pre-render: (lambda (world) world))
+                   (post-render: (lambda (world) world)))
   (unless (procedure? create-world) (error-log make-app: "create-world parameter should be a procedure"))
+  (unless (procedure? update-world) (error-log make-app: "update-world parameter should be a procedure"))
+  (unless (procedure? pre-render) (error-log make-app: "pre-render parameter should be a procedure"))
+  (unless (procedure? post-render) (error-log make-app: "post-render parameter should be a procedure"))
   (when (zero? (SDL_WasInit 0)) (init-app!))
-  (draw-world-wrapper
-   (update-world-wrapper
-    (process-events-wrapper
-     (create-world-wrapper create-world)))))
+  (lambda ()
+    (cond-expand
+     (ios
+      (SDL_iPhoneSetAnimationCallback window 1 *sdl-ios-animation-callback-proxy* #f)
+      (sdl-ios-animation-callback-set!
+       (let ((world '()))
+         (lambda (params)
+           (update-app!)
+           (handle-events world)
+           (set! world (update-world))
+           (draw world)))))
+     (else
+      (let loop ((world (create-world-wrapper create-world)))
+        (draw-world-wrapper pre-render
+                            post-render
+                            (update-world-wrapper update-world
+                                                  (process-events-wrapper world))))))))
 
-;; Application main loop
-;; TODO
-;; (define (run-loop!)
-;;   (when (zero? (SDL_WasInit 0))
-;;         (init-app!))
-;;   (cond-expand
-;;    (ios
-;;     (SDL_iPhoneSetAnimationCallback window 1 *sdl-ios-animation-callback-proxy* #f)
-;;     (sdl-ios-animation-callback-set!
-;;      (let ((world '()))
-;;        (lambda (params)
-;;          (update-app!)
-;;          (handle-events world)
-;;          (set! world (update-world))
-;;          (draw world)))))
-;;    (else
-;;     (let loop ((world '()))
-;;       (update-app!)
-;;       (handle-events world)
-;;       (loop (draw (update-world world)))))))
 
 ;;-------------------------------------------------------------------------------
 ;; Events
@@ -370,18 +369,13 @@
                  (glBindTexture GL_TEXTURE_2D (*->GLuint (texture-id (table-ref gl-textures 'the-lambda)))))))
 
 ;;! Draw all elements in the world (internal wrapper)
-(define (draw-world-wrapper world)
-  (define current-color (list (random-real) (random-real) (random-real) 1.0))
-  (glBlendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA)
-  (glEnable GL_BLEND)
-  (glDisable GL_CULL_FACE)
-  (glCullFace GL_BACK)
-  ;; Background
-  (apply glClearColor current-color)
-  (glClear (bitwise-ior GL_COLOR_BUFFER_BIT))
+(define (draw-world-wrapper pre-render-proc post-render-proc world)
+  ;; post-render callback
+  (pre-render-proc world)
   ;; Draw the different elements
   (for-each draw-sprite (world-sprites world))
-  ;; Render
+  ;; Render and post-render callback
+  (post-render-proc world)
   (SDL_GL_SwapWindow window)
   world)
 
@@ -392,7 +386,7 @@
   (create-proc
    (make-world '())))
 
-(define (update-world-wrapper world)
+(define (update-world-wrapper update-world-proc world)
   (let ((events (world-events world))
         (sprites (world-sprites world)))
     (let recur ((events events)
@@ -507,7 +501,8 @@
                        `((current-ticks: ,current-ticks)
                          (previous-ticks: ,previous-ticks)
                          (time-step: ,time-step)))
-      world)))
+      ;; Process the world with the custom procedure provided by the user
+      (update-world-proc world))))
 
 
 ;;-------------------------------------------------------------------------------
