@@ -318,122 +318,124 @@
    (make-world '())))
 
 (define (update-world-wrapper update-world-proc world)
-  (let ((events (world-events world))
-        (sprites (world-sprites world)))
-    (let recur ((events events)
-                (world world))
-      (let ((handle-event-up&down
-             (lambda (event-proc) ;; produce a lambda with event-proc specialization
-               (lambda (event)
-                 (recur
-                  (cdr events)
-                  (let ((x (cadr (memq x: event)))
-                        (y (cadr (memq y: event))))
-                    ;; If a world isn't produced, then pass along the original one
-                    (aif new-world world?
-                         (call/cc
-                          (lambda (leave) ;; Consume the event if captured by one element
-                            (fold (lambda (element world)
-                                    (aif proc (event-proc element)
-                                         (let ((element-x (sprite-x element))
-                                               (element-y (sprite-y element))
-                                               (element-width (sprite-width element))
-                                               (element-height (sprite-height element)))
-                                           (if (and (> x element-x)
-                                                    (> y element-y)
-                                                    (< x (+ element-x element-width))
-                                                    (< y (+ element-y element-height)))
-                                               (leave (proc element world event))))
-                                         world))
-                                  world
-                                  sprites)))
-                         new-world
-                         world))))))
-            (handle-event-motion
-             (lambda (event)
-               (recur
-                (cdr events)
-                (let ((x (cadr (memq x: event)))
-                      (y (cadr (memq y: event)))
-                      (x-relative (cadr (memq x-relative: event)))
-                      (y-relative (cadr (memq y-relative: event))))
-                  (aif new-world world?
-                       (call/cc
-                        (lambda (leave) ;; Consume the event once is captured by one element
-                          (fold (lambda (element world)
-                                  (let ((mouseover-proc (interactive-on-mouseover element))
-                                        (mouseout-proc (interactive-on-mouseout element))
-                                        (mousemove-proc (interactive-on-mousemove element)))
-                                    (if (or mouseover-proc mouseout-proc mousemove-proc)
-                                        (let ((element-x (sprite-x element))
-                                              (element-y (sprite-y element))
-                                              (element-width (sprite-width element))
-                                              (element-height (sprite-height element))
-                                              (x-previous (- x x-relative))
-                                              (y-previous (- y y-relative)))
-                                          (let ((element-x2 (+ element-x element-width))
-                                                (element-y2 (+ element-y element-height)))
-                                            (cond
-                                             ;; If mouse entered the element (wasn't previously inside)
-                                             ((and (> x element-x)
-                                                   (> y element-y)
-                                                   (< x element-x2)
-                                                   (< y element-y2)
-                                                   (not (and (> x-previous element-x)
-                                                             (> y-previous element-y)
-                                                             (< x-previous element-x2)
-                                                             (< y-previous element-y2))))
-                                              (leave (mouseover-proc element world event)))
-                                             ;; If mouse left the element (was previously inside)
-                                             ((and (> x-previous element-x)
-                                                   (> y-previous element-y)
-                                                   (< x-previous element-x2)
-                                                   (< y-previous element-y2)
-                                                   (not (and (> x element-x)
-                                                             (> y element-y)
-                                                             (< x element-x2)
-                                                             (< y element-y2))))
-                                              (leave (mouseout-proc element world event)))
-                                             ;; If mouse is moving within the element (is AND was inside)
-                                             ((and (> x-previous element-x)
-                                                   (> y-previous element-y)
-                                                   (< x-previous element-x2)
-                                                   (< y-previous element-y2)
-                                                   (> x element-x)
-                                                   (> y element-y)
-                                                   (< x element-x2)
-                                                   (< y element-y2))
-                                              (leave (mousemove-proc element world event)))
-                                             (else world)))))))
-                                world
-                                sprites)))
-                       new-world
-                       world))))))
-        (cond ((null? events) #!void)
-              ((car events) (lambda (e) (eq? (car e) 'mousedown)) =>
-               (handle-event-up&down interactive-on-mousedown))
-              ((car events) (lambda (e) (eq? (car e) 'mouseup)) =>
-               (handle-event-up&down interactive-on-mouseup))
-              ((car events) (lambda (e) (eq? (car e) 'mousemotion)) =>
-               handle-event-motion)
-              (else
-               (recur (cdr events) world)))))
+  (let* ((events (world-events world))
+         (sprites (world-sprites world))
+         (new-world
+          (let recur ((events events)
+                      (world world))
+            (let ((handle-event-up&down
+                   (lambda (event-proc) ;; produce a lambda with event-proc specialization
+                     (lambda (event)
+                       (recur
+                        (cdr events)
+                        (let ((x (cadr (memq x: event)))
+                              (y (cadr (memq y: event))))
+                          ;; If a world isn't produced, then pass along the original one
+                          (aif new-world world?
+                               (call/cc
+                                (lambda (leave) ;; Consume the event if captured by one element
+                                  (fold (lambda (element world)
+                                          (aif proc (event-proc element)
+                                               (let ((element-x (sprite-x element))
+                                                     (element-y (sprite-y element))
+                                                     (element-width (sprite-width element))
+                                                     (element-height (sprite-height element)))
+                                                 (if (and (> x element-x)
+                                                          (> y element-y)
+                                                          (< x (+ element-x element-width))
+                                                          (< y (+ element-y element-height)))
+                                                     (leave (proc element world event))
+                                                     world))
+                                               world))
+                                        world
+                                        sprites)))
+                               new-world
+                               world))))))
+                  (handle-event-motion
+                   (lambda (event)
+                     (recur
+                      (cdr events)
+                      (let ((x (cadr (memq x: event)))
+                            (y (cadr (memq y: event)))
+                            (x-relative (cadr (memq x-relative: event)))
+                            (y-relative (cadr (memq y-relative: event))))
+                        (aif new-world world?
+                             (call/cc
+                              (lambda (leave) ;; Consume the event once is captured by one element
+                                (fold (lambda (element world)
+                                        (let ((mouseover-proc (interactive-on-mouseover element))
+                                              (mouseout-proc (interactive-on-mouseout element))
+                                              (mousemove-proc (interactive-on-mousemove element)))
+                                          (if (or mouseover-proc mouseout-proc mousemove-proc)
+                                              (let ((element-x (sprite-x element))
+                                                    (element-y (sprite-y element))
+                                                    (element-width (sprite-width element))
+                                                    (element-height (sprite-height element))
+                                                    (x-previous (- x x-relative))
+                                                    (y-previous (- y y-relative)))
+                                                (let ((element-x2 (+ element-x element-width))
+                                                      (element-y2 (+ element-y element-height)))
+                                                  (cond
+                                                   ;; If mouse entered the element (wasn't previously inside)
+                                                   ((and (> x element-x)
+                                                         (> y element-y)
+                                                         (< x element-x2)
+                                                         (< y element-y2)
+                                                         (not (and (> x-previous element-x)
+                                                                   (> y-previous element-y)
+                                                                   (< x-previous element-x2)
+                                                                   (< y-previous element-y2))))
+                                                    (leave (mouseover-proc element world event)))
+                                                   ;; If mouse left the element (was previously inside)
+                                                   ((and (> x-previous element-x)
+                                                         (> y-previous element-y)
+                                                         (< x-previous element-x2)
+                                                         (< y-previous element-y2)
+                                                         (not (and (> x element-x)
+                                                                   (> y element-y)
+                                                                   (< x element-x2)
+                                                                   (< y element-y2))))
+                                                    (leave (mouseout-proc element world event)))
+                                                   ;; If mouse is moving within the element (is AND was inside)
+                                                   ((and (> x-previous element-x)
+                                                         (> y-previous element-y)
+                                                         (< x-previous element-x2)
+                                                         (< y-previous element-y2)
+                                                         (> x element-x)
+                                                         (> y element-y)
+                                                         (< x element-x2)
+                                                         (< y element-y2))
+                                                    (leave (mousemove-proc element world event)))
+                                                   (else world)))))))
+                                      world
+                                      sprites)))
+                             new-world
+                             world))))))
+              (cond ((null? events) world)
+                    ((car events) (lambda (e) (eq? (car e) 'mousedown)) =>
+                     (handle-event-up&down interactive-on-mousedown))
+                    ((car events) (lambda (e) (eq? (car e) 'mouseup)) =>
+                     (handle-event-up&down interactive-on-mouseup))
+                    ((car events) (lambda (e) (eq? (car e) 'mousemotion)) =>
+                     handle-event-motion)
+                    (else
+                     (recur (cdr events) world)))))))
     ;; Handle resize event
     (aif resize (assq 'window-resized events)
          (let ((width (cadr (memq width: resize-event)))
                (height (cadr (memq height: resize-event))))
            (resize-graphics! width height)))
     ;; Update world time
-    (let* ((time (world-time world))
+    (let* ((time (world-time new-world))
            (current-ticks (SDL_GetTicks))
            (previous-ticks (cadr (assq current-ticks: time)))
            (time-step (/ (- current-ticks previous-ticks) 1000.0)))
-      (world-time-set! world
+      (world-time-set! new-world
                        `((current-ticks: ,current-ticks)
                          (previous-ticks: ,previous-ticks)
                          (time-step: ,time-step)))
       ;; Process the world with the custom procedure provided by the user
-      (update-world-proc world))))
+      (update-world-proc new-world))))
 
 ;;! Inject a world copy and substitute current one
 (define (inject-world! new-world)

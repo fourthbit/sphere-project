@@ -180,3 +180,11 @@
    (world-time world)
    (world-events world)
    (world-sprites world)))
+
+(define (world-update world attribute value)
+  (let ((new-world (make-world/copy world)))
+    (cond ((eq? attribute 'sprites) (world-sprites-set! new-world value))
+          ((eq? attribute 'events) (world-events-set! new-world value))
+          ((eq? attribute 'time) (world-time-set! new-world value))
+          (else (error-log world-update: "non-existent attribute")))
+    new-world))
