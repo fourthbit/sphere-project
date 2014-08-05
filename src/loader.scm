@@ -39,7 +39,8 @@
   ;; engine.scm
   (update-source "engine.scm")
   ;; app.scm
-  (update-source "app.scm"))
+  (update-source "app.scm")
+  'success)
 
 ;; Install and run the remote REPL: IP address of the computer running the debug server
 (if (remote-repl-setup! "localhost" port: 20000)

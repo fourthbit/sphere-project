@@ -30,32 +30,32 @@
     (SDL_GetDisplayMode 0 0 mode*)
     (let ((reported-width (SDL_DisplayMode-w mode*))
           (reported-height (SDL_DisplayMode-h mode*)))
-      (set! screen-width (min reported-width reported-height))
-      (set! screen-height (max reported-width reported-height)))
-    (set! window
+      (set! *screen-width* (min reported-width reported-height))
+      (set! *screen-height* (max reported-width reported-height)))
+    (set! *window*
           (SDL_CreateWindow "SDL/GL" SDL_WINDOWPOS_CENTERED SDL_WINDOWPOS_CENTERED
-                            screen-width screen-height
+                            *screen-width* *screen-height*
                             (bitwise-ior SDL_WINDOW_OPENGL
                                          SDL_WINDOW_RESIZABLE
                                          SDL_WINDOW_BORDERLESS
                                          SDL_WINDOW_ALLOW_HIGHDPI)))
-    (unless window (error-log "Unable to create render window" (SDL_GetError)))
+    (unless *window* (error-log "Unable to create render window" (SDL_GetError)))
     ;; OpenGL/ES context
-    (let ((ctx (SDL_GL_CreateContext window)))
-      (SDL_Log (string-append "SDL screen size: " (object->string screen-width) " x " (object->string screen-height)))
+    (let ((ctx (SDL_GL_CreateContext *window*)))
+      (SDL_Log (string-append "SDL screen size: " (object->string *screen-width*) " x " (object->string *screen-height*)))
       (SDL_Log (string-append "OpenGL Version: " (*->string (glGetString GL_VERSION))))
       ;; Glew: initialize extensions
       (cond-expand (host (glewInit)) (else #!void)))
     ;; OpenGL viewport
-    (glViewport 0 0 screen-width screen-height)
-    (glScissor 0 0 screen-width screen-height)
+    (glViewport 0 0 *screen-width* *screen-height*)
+    (glScissor 0 0 *screen-width* *screen-height*)
     ;; Init graphics: shaders, textures...
     (init-graphics!)))
 
 ;; Cleanup resources and quit the application
 (define (destroy-app!)
   (destroy-graphics!)
-  (SDL_DestroyWindow window)
+  (SDL_DestroyWindow *window*)
   (SDL_Quit)
   (exit))
 
@@ -78,7 +78,7 @@
              (cond-expand
               (ios
                (error-log "IOS LOOP TODO!")
-               (SDL_iPhoneSetAnimationCallback window 1 *sdl-ios-animation-callback-proxy* #f)
+               (SDL_iPhoneSetAnimationCallback *window* 1 *sdl-ios-animation-callback-proxy* #f)
                ;; (sdl-ios-animation-callback-set!
                ;;  (let ((world '()))
                ;;    (lambda (params)
@@ -99,12 +99,6 @@
                                       (update-world-wrapper update-world
                                                             (process-events-wrapper world))))))))))
     (thread-start! *app-thread*)))
-
-
-(define (inject-world! new-world)
-  (set! *world-injected* new-world))
-
-(define (get-world) *world*)
 
 ;;-------------------------------------------------------------------------------
 ;; Events
@@ -227,10 +221,10 @@
                               (lambda (program-id)
                                 (glBindAttribLocation program-id 0 "position"))
                               delete-shaders?: #t)))
-      (table-set! gl-programs 'color color-program-id)
+      (table-set! *gl-programs* 'color color-program-id)
       (glUseProgram color-program-id)
       (check-gl-error
-       (table-set! gl-uniforms 'perspective
+       (table-set! *gl-uniforms* 'perspective
                    (glGetUniformLocation color-program-id "perspectiveMatrix")))
       (glUseProgram 0))
     (let ((tex2d-program-id
@@ -244,15 +238,15 @@
                                 (glBindAttribLocation program-id 0 "position")
                                 (glBindAttribLocation program-id 1 "texCoord"))
                               delete-shaders?: #t)))
-      (table-set! gl-programs 'tex2d tex2d-program-id)
+      (table-set! *gl-programs* 'tex2d tex2d-program-id)
       (glUseProgram tex2d-program-id)
       (check-gl-error
-       (table-set! gl-uniforms 'texture
+       (table-set! *gl-uniforms* 'texture
                    (glGetUniformLocation tex2d-program-id "colorTexture")))
       (check-gl-error
-       (table-set! gl-uniforms 'perspective (glGetUniformLocation tex2d-program-id "perspectiveMatrix")))
+       (table-set! *gl-uniforms* 'perspective (glGetUniformLocation tex2d-program-id "perspectiveMatrix")))
       (glUseProgram 0)))
-  (resize-graphics! screen-width screen-height)
+  (resize-graphics! *screen-width* *screen-height*)
   (init-shaders!)
   ;; Init sampler
   (cond-expand
@@ -265,45 +259,45 @@
    (else #!void)))
 
 ;; Handle window resizing and orientation
-(define (resize-graphics! screen-width screen-height)
-  (set! screen-width screen-width)
-  (set! screen-height screen-height)
-  (set! perspective-matrix
+(define (resize-graphics! *screen-width* *screen-height*)
+  (set! *screen-width* *screen-width*)
+  (set! *screen-height* *screen-height*)
+  (set! *perspective-matrix*
         (matrix:* (make-translation-matrix -1.0 1.0 0.0)
-                  (matrix:* (make-scaling-matrix (/ 2.0 screen-width)
-                                                 (/ -2.0 screen-height)
+                  (matrix:* (make-scaling-matrix (/ 2.0 *screen-width*)
+                                                 (/ -2.0 *screen-height*)
                                                  1.0)
                             (make-identity-matrix))))
-  (set! gl-perspective-matrix (matrix->GLfloat*
+  (set! *gl-perspective-matrix* (matrix->GLfloat*
                                (matrix:map exact->inexact
-                                           perspective-matrix))))
+                                           *perspective-matrix*))))
 
 ;; Tear down all OpenGL structures
 (define (destroy-graphics!)
-  (table-for-each (lambda (buffer) (glDeleteBuffers 1 buffer)) gl-buffers)
-  (set! gl-buffers (make-table))
-  (table-for-each (lambda (buffer) (glDeleteTextures 1 buffer)) gl-textures)
-  (set! gl-textures (make-table)))
+  (table-for-each (lambda (buffer) (glDeleteBuffers 1 buffer)) *gl-buffers*)
+  (set! *gl-buffers* (make-table))
+  (table-for-each (lambda (buffer) (glDeleteTextures 1 buffer)) *gl-textures*)
+  (set! *gl-textures* (make-table)))
 
 ;;! Draw the given sprite in the current window
 (define (draw-sprite sprite)
   (gl-draw-vbo (buffer-id (sprite-buffer sprite))
-               (table-ref gl-programs 'tex2d)
+               (table-ref *gl-programs* 'tex2d)
                GL_TRIANGLES 6
                (lambda ()
                  (cond-expand (host (glBindSampler 0 (*->GLuint sprite-sampler*)))
                               (else #!void))
                  (check-gl-error
-                  (glUniform1i (table-ref gl-uniforms 'texture) 0))
+                  (glUniform1i (table-ref *gl-uniforms* 'texture) 0))
                  (check-gl-error
-                  (glUniformMatrix4fv (table-ref gl-uniforms 'perspective) 1 GL_FALSE gl-perspective-matrix))
+                  (glUniformMatrix4fv (table-ref *gl-uniforms* 'perspective) 1 GL_FALSE *gl-perspective-matrix*))
                  (glEnableVertexAttribArray 0)
                  (glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size) #f)
                  (glEnableVertexAttribArray 1)
                  (glVertexAttribPointer 1 2 GL_FLOAT GL_FALSE (* 4 GLfloat-size)
                                         (integer->void* (* 2 GLfloat-size)))
                  (glActiveTexture GL_TEXTURE0)
-                 (glBindTexture GL_TEXTURE_2D (*->GLuint (texture-id (table-ref gl-textures 'the-lambda)))))))
+                 (glBindTexture GL_TEXTURE_2D (*->GLuint (texture-id (table-ref *gl-textures* 'the-lambda)))))))
 
 ;;! Draw all elements in the world (internal wrapper)
 (define (draw-world-wrapper pre-render-proc post-render-proc world)
@@ -313,7 +307,7 @@
   (for-each draw-sprite (world-sprites world))
   ;; Render and post-render callback
   (post-render-proc world)
-  (SDL_GL_SwapWindow window)
+  (SDL_GL_SwapWindow *window*)
   world)
 
 ;;-------------------------------------------------------------------------------
@@ -440,3 +434,11 @@
                          (time-step: ,time-step)))
       ;; Process the world with the custom procedure provided by the user
       (update-world-proc world))))
+
+;;! Inject a world copy and substitute current one
+(define (inject-world! new-world)
+  (set! *world-injected* new-world))
+
+;;! Get a copy of the current world
+(define (get-world-copy)
+  (make-world/copy *world*))

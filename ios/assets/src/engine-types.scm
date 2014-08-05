@@ -33,7 +33,7 @@
                        usage
                        type
                        data)))
-        (table-set! gl-buffers uuid instance)
+        (table-set! *gl-buffers* uuid instance)
         instance))))
 
 ;;! Type: Texture
@@ -79,7 +79,7 @@
         (receive (texture-id* w h)
                  (load-texture->gl-texture path)
                  (let ((instance (texture-constructor texture-id* key w h)))
-                   (if register? (table-set! gl-textures key instance))
+                   (if register? (table-set! *gl-textures* key instance))
                    instance)))))
 
 ;;-------------------------------------------------------------------------------
@@ -119,7 +119,7 @@
                       (on-mouseup:)
                       (on-mousemove:))
   (let* ((tex (cond ((texture? texture/key) texture/key)
-                    ((table-ref gl-textures texture/key #f) => values)
+                    ((table-ref *gl-textures* texture/key #f) => values)
                     (else
                      (error-log make-sprite:
                                 "texture/key parameter requires either a texture or a texture key"))))
@@ -154,7 +154,7 @@
     (when on-mousemove (interactive-on-mousemove-set! sprite on-mousemove))
     ;; Will to automatically remove the associated OpenGL/ES vertex buffer that was created
     ;; along with this sprite, as soon as this instance is destroyed
-    (make-will sprite (lambda (s) (table-set! gl-buffers buffer-uuid)))
+    (make-will sprite (lambda (s) (table-set! *gl-buffers* buffer-uuid)))
     sprite))
 
 ;;! Type: World
@@ -173,3 +173,9 @@
    '()
    ;; elements get splitted into different kinds
    elements))
+
+(define (make-world/copy world)
+  (world-constructor
+   (world-time world)
+   (world-events world)
+   (world-sprites world)))

@@ -11,25 +11,25 @@
 ;;-------------------------------------------------------------------------------
 ;;!! SDL
 
-(define window #f)
-(define screen-width #f)
-(define screen-height #f)
+(define *window* #f)
+(define *screen-width* #f)
+(define *screen-height* #f)
 
 ;;-------------------------------------------------------------------------------
 ;;!! OpenGL
 
 ;;! Matrices
-(define perspective-matrix #f)
-(define gl-perspective-matrix #f)
+(define *perspective-matrix* #f)
+(define *gl-perspective-matrix* #f)
 
 ;;! Shader programs
-(define gl-programs (make-table))
+(define *gl-programs* (make-table))
 
 ;;! Buffers
-(define gl-buffers (make-table))
+(define *gl-buffers* (make-table))
 
 ;;! OpenGL Textures registry
-(define gl-textures (make-table))
+(define *gl-textures* (make-table))
 
 ;;! Texture sampler (OpenGL 4.x)
 (cond-expand
@@ -37,7 +37,7 @@
  (else #!void))
 
 ;;! Uniform variables
-(define gl-uniforms (make-table))
+(define *gl-uniforms* (make-table))
 
 ;;-------------------------------------------------------------------------------
 ;;!! App
