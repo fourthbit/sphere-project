@@ -20,8 +20,7 @@
                          (make-sprite 20.0 420.0 texture2
                                       on-mouseup: (lambda (self world event)
                                                     (world-update world 'sprites
-                                                                  (remove (lambda (s) (equal? self s))
-                                                                          (world-sprites world)))))))))
+                                                                  (delete self (world-sprites world)))))))))
    pre-render: (let ((color-r (random-real))
                      (op +))
                  (lambda (world)
