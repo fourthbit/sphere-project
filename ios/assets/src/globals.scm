@@ -38,3 +38,11 @@
 
 ;;! Uniform variables
 (define gl-uniforms (make-table))
+
+;;-------------------------------------------------------------------------------
+;;!! App
+
+(define *app-thread* #f)
+
+(define *world* #f)
+(define *world-injected* #f)

@@ -18,7 +18,10 @@
 (define (init-globals)
   (if (zero? (shell-command "wget localhost:8000/globals.scm -O assets/src/globals.scm"))
       (load "assets/src/globals.scm")
-      (println "globals.scm could not be retrieved")))
+      (println "globals.scm could not be retrieved"))
+  (if (zero? (shell-command "wget localhost:8000/engine-types.scm -O assets/src/engine-types.scm"))
+      (load "assets/src/engine-types.scm")
+      (println "engine-types.scm could not be retrieved")))
 
 ;; Automatically load files
 (init-globals)
