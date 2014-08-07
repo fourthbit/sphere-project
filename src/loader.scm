@@ -14,10 +14,10 @@
 
 ;; Initialize globals
 (define (init-globals)
-  (if (zero? (shell-command "wget localhost:8000/globals.scm -O assets/src/globals.scm"))
+  (if (zero? (shell-command "wget localhost:8000/globals.scm -O spheres/src/globals.scm"))
       (load "spheres/src/globals.scm")
       (println "globals.scm could not be retrieved"))
-  (if (zero? (shell-command "wget localhost:8000/engine-types.scm -O assets/src/engine-types.scm"))
+  (if (zero? (shell-command "wget localhost:8000/engine-types.scm -O spheres/src/engine-types.scm"))
       (load "spheres/src/engine-types.scm")
       (println "engine-types.scm could not be retrieved")))
 
@@ -27,7 +27,7 @@
 ;; Update the app Scheme source code
 (define (go)
   (define (update-source source)
-    (if (zero? (shell-command (string-append "wget localhost:8000/" source " -O assets/src/" source)))
+    (if (zero? (shell-command (string-append "wget localhost:8000/" source " -O spheres/src/" source)))
         (load (string-append "spheres/src/" source))
         (let ((message (string-append source " could not be retrieved")))
           (SDL_Log message)
@@ -41,13 +41,10 @@
   (update-source "app.scm")
   'success)
 
-;; Install and run the remote REPL: IP address of the computer running the debug server
-(if (remote-repl-setup! "localhost" port: 20000)
-    (begin
-      (remote-repl-run!)
-      (SDL_Log "***** Successfully connected to Gambit Debug Server *****"))
-    (SDL_Log "***** Unable to connect to Gambit Debug Server. Are you running 'sense'? *****"))
+;; Run the application
+(go)
 
-;; Put the main thread to sleep
-(thread-sleep! +inf.0)
-
+;; ;; Put the main thread to sleep, unless we want exit the main (like in iOS)
+(cond-expand
+ (ios #!void)
+ (else (thread-sleep! +inf.0)))

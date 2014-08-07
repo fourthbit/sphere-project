@@ -43,6 +43,7 @@
 ;;!! App
 
 (define *app-thread* #f)
+(define *repl-thread* #f)
 
 (define *world* #f)
 (define *world-injected* #f)
