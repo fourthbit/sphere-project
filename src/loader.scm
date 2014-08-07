@@ -12,8 +12,6 @@
  (SDL_Log "Successfully loaded environment"))
 
 
-
-
 ;; Initialize globals
 (define (init-globals)
   (if (zero? (shell-command "wget localhost:8000/globals.scm -O assets/src/globals.scm"))
@@ -34,6 +32,7 @@
         (let ((message (string-append source " could not be retrieved")))
           (SDL_Log message)
           (println message))))
+  (eval '(add-cond-expand-feature! ios))
   ;; gl-utils.scm
   (update-source "gl-utils.scm")
   ;; engine.scm
@@ -51,3 +50,4 @@
 
 ;; Put the main thread to sleep
 (thread-sleep! +inf.0)
+

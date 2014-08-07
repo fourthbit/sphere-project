@@ -18,5 +18,4 @@
    (core: assert-macros))
   (load
    (energy: remote/debuggee)
-   (math: matrix)
-   (fusion: core))))
+   (math: matrix))))

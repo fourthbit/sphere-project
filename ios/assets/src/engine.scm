@@ -76,17 +76,24 @@
           (make-thread
            (lambda ()
              (cond-expand
-              (ios
-               (error-log "IOS LOOP TODO!")
-               (SDL_iPhoneSetAnimationCallback *window* 1 *sdl-ios-animation-callback-proxy* #f)
-               ;; (sdl-ios-animation-callback-set!
-               ;;  (let ((world '()))
-               ;;    (lambda (params)
-               ;;      (update-app!)
-               ;;      (handle-events world)
-               ;;      (set! world (update-world))
-               ;;      (draw world))))
-               )
+              (ios-todo
+               (error-log "creating iOS callback")
+               (sdl-ios-animation-callback-set!
+                (let ((world (create-world-wrapper create-world)))
+                  (lambda (params)
+                    (error-log "iOS loop")
+                    (when *world-injected* ;; Injected world
+                          (set! world *world-injected*)
+                          (set! *world-injected* #f))
+                    (set! *world* world) ;; Global world link
+                    (set! world          ;; Update world
+                          (draw-world-wrapper pre-render
+                                              post-render
+                                              (update-world-wrapper
+                                               update-world
+                                               (process-events-wrapper world)))))))
+               (error-log "setting iOS callback")
+               (SDL_iPhoneSetAnimationCallback *window* 1 *sdl-ios-animation-callback-proxy* #f))
               (else
                (let loop ((world (create-world-wrapper create-world)))
                  (when *world-injected*
