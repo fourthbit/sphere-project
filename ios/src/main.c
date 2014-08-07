@@ -48,12 +48,13 @@ void ___run_gambit()
   setup_params.linker = SCHEME_LIBRARY_LINKER;
   setup_params.debug_settings = debug_settings;
 
-  printf("%s", "Running Gambit...\n");
+  SDL_Log("%s", "Setting up Gambit...\n");
 
   ___setup(&setup_params);
 
-  printf("%s", "Cleaning up Gambit...\n");
-  ___cleanup();
+  SDL_Log("%s", "Gambit setup finished...\n");
+  //printf("%s", "Cleaning up Gambit...\n");
+  //___cleanup();
 }
 
 int SDL_main(int argc, char *argv[])

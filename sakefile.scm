@@ -80,6 +80,8 @@
                                             "-fcolor-diagnostics")                                            
                               verbose: #t)
       (let ((arch 'i386)) ;; armv7 / armv7s
+        ;;(fusion#ios-copy-source-dependencies 'app)
+        
         ;; Compile the main module and its dependencies as a loadable object, for all iOS
         ;; archs. The (load) function takes care of loading code dinamically, both compiled
         ;; and source code. This can be used during iOS development in the following ways:
@@ -115,7 +117,7 @@
   (shell-command "killall -9 iPhone\\ Simulator &>/dev/null")
   ;; Run asset server and iOS simulator
   (let* ((asset-server (parameterize
-                        ((current-directory (string-append (ios-assets-directory) "src/")))
+                        ((current-directory (string-append (ios-directory) "spheres/src/")))
                         (open-process (list path: "python"
                                             arguments: '("-m" "SimpleHTTPServer")
                                             stdin-redirection: #t

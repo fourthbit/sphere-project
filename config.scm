@@ -9,6 +9,15 @@
    (math: matrix)
    (fusion: ios)
    (fabric: algorithm/list)))
+ (app
+  (include
+   (core: base-macros)
+   (core: assert-macros)
+   (= engine-type))
+  (load
+   (= globals)
+   (= gl-utils)
+   (= engine)))
  (main-minimal
   (load
    (energy: remote/debuggee)))

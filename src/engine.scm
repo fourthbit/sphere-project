@@ -71,30 +71,30 @@
   (when (zero? (SDL_WasInit 0)) (init-app!))
   ;; Generate a procedure that runs the app in a new thread
   (lambda ()
-    (if *app-thread* (thread-terminate! *app-thread*))
-    (set! *app-thread*
-          (make-thread
-           (lambda ()
-             (cond-expand
-              (ios-todo
-               (error-log "creating iOS callback")
-               (sdl-ios-animation-callback-set!
-                (let ((world (create-world-wrapper create-world)))
-                  (lambda (params)
-                    (error-log "iOS loop")
-                    (when *world-injected* ;; Injected world
-                          (set! world *world-injected*)
-                          (set! *world-injected* #f))
-                    (set! *world* world) ;; Global world link
-                    (set! world          ;; Update world
-                          (draw-world-wrapper pre-render
-                                              post-render
-                                              (update-world-wrapper
-                                               update-world
-                                               (process-events-wrapper world)))))))
-               (error-log "setting iOS callback")
-               (SDL_iPhoneSetAnimationCallback *window* 1 *sdl-ios-animation-callback-proxy* #f))
-              (else
+    (cond-expand
+     (ios-todo
+      (error-log "creating iOS callback")
+      (sdl-ios-animation-callback-set!
+       (let ((world (create-world-wrapper create-world)))
+         (lambda (params)
+           (error-log "iOS loop")
+           (when *world-injected* ;; Injected world
+                 (set! world *world-injected*)
+                 (set! *world-injected* #f))
+           (set! *world* world) ;; Global world link
+           (set! world          ;; Update world
+                 (draw-world-wrapper pre-render
+                                     post-render
+                                     (update-world-wrapper
+                                      update-world
+                                      (process-events-wrapper world)))))))
+      (error-log "setting iOS callback")
+      (SDL_iPhoneSetAnimationCallback *window* 1 *sdl-ios-animation-callback-proxy* #f))
+     (else
+      (if *app-thread* (thread-terminate! *app-thread*))
+      (set! *app-thread*
+            (make-thread
+             (lambda ()
                (let loop ((world (create-world-wrapper create-world)))
                  (when *world-injected*
                        (set! world *world-injected*)
@@ -104,8 +104,8 @@
                   (draw-world-wrapper pre-render
                                       post-render
                                       (update-world-wrapper update-world
-                                                            (process-events-wrapper world))))))))))
-    (thread-start! *app-thread*)))
+                                                            (process-events-wrapper world))))))))
+      (thread-start! *app-thread*)))))
 
 ;;-------------------------------------------------------------------------------
 ;; Events

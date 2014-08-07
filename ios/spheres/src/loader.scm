@@ -15,10 +15,10 @@
 ;; Initialize globals
 (define (init-globals)
   (if (zero? (shell-command "wget localhost:8000/globals.scm -O assets/src/globals.scm"))
-      (load "spheres/src/globals.scm")
+      (load "assets/src/globals.scm")
       (println "globals.scm could not be retrieved"))
   (if (zero? (shell-command "wget localhost:8000/engine-types.scm -O assets/src/engine-types.scm"))
-      (load "spheres/src/engine-types.scm")
+      (load "assets/src/engine-types.scm")
       (println "engine-types.scm could not be retrieved")))
 
 ;; Automatically load files
@@ -42,11 +42,13 @@
   'success)
 
 ;; Install and run the remote REPL: IP address of the computer running the debug server
-(if (remote-repl-setup! "localhost" port: 20000)
-    (begin
-      (remote-repl-run!)
-      (SDL_Log "***** Successfully connected to Gambit Debug Server *****"))
-    (SDL_Log "***** Unable to connect to Gambit Debug Server. Are you running 'sense'? *****"))
+;; (if (remote-repl-setup! "localhost" port: 20000)
+;;     (begin
+;;       (remote-repl-run!)
+;;       (SDL_Log "***** Successfully connected to Gambit Debug Server *****"))
+;;     (SDL_Log "***** Unable to connect to Gambit Debug Server. Are you running 'sense'? *****"))
+
+(go)
 
 ;; Put the main thread to sleep
 (thread-sleep! +inf.0)
