@@ -8,11 +8,11 @@
 #define ___GAMBIT_H
 
 #ifndef ___VERSION
-#define ___VERSION 407002
+#define ___VERSION 407003
 #endif
 
-#if ___VERSION != 407002
-#include "gambit-not407002.h"
+#if ___VERSION != 407003
+#include "gambit-not407003.h"
 #else
 
 #ifdef HAVE_CONFIG_H
@@ -3220,6 +3220,22 @@ ___STORE_U64(___BODY_AS(x,___tSUBTYPED),(y)>>___TB,___U64UNBOX(z));
 #define ___GLOBALVARPRIMREF(gv)___PRMCELL(___GLOBALVARSTRUCT(gv)->prm)
 #define ___GLOBALVARSET(gv,x)___GLOCELL(___GLOBALVARSTRUCT(gv)->val) = x;
 #define ___GLOBALVARPRIMSET(gv,x)___PRMCELL(___GLOBALVARSTRUCT(gv)->prm) = x;
+
+#define ___RATNUMMAKE(num,den) \
+(___ALLOC(___RATNUM_SIZE+1), \
+___hp[-3]=___MAKE_HD_WORDS(___RATNUM_SIZE,___sRATNUM), \
+___hp[-2]=num,___hp[-1]=den,___TAG((___hp-___RATNUM_SIZE-1),___tSUBTYPED))
+
+#define ___RATNUMNUMERATOR(obj)___FIELD(obj,0)
+#define ___RATNUMDENOMINATOR(obj)___FIELD(obj,1)
+
+#define ___CPXNUMMAKE(real,imag) \
+(___ALLOC(___CPXNUM_SIZE+1), \
+___hp[-3]=___MAKE_HD_WORDS(___CPXNUM_SIZE,___sCPXNUM), \
+___hp[-2]=real,___hp[-1]=imag,___TAG((___hp-___CPXNUM_SIZE-1),___tSUBTYPED))
+
+#define ___CPXNUMREAL(obj)___FIELD(obj,0)
+#define ___CPXNUMIMAG(obj)___FIELD(obj,1)
 
 #define ___MAKEPROMISE(x) \
 (___ALLOC(___PROMISE_SIZE+1), \
