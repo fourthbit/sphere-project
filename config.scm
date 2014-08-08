@@ -1,8 +1,11 @@
 (sphere: "my-app")
 (dependencies:
  (loader
+  (include
+   (core: base-macros))
   (load
    (energy: remote/debuggee)
+   (fusion: spheres-remote)
    (opengl: gl-es2)
    (sdl2: sdl2)
    (sdl2: sdl2-image)
@@ -13,7 +16,7 @@
   (include
    (core: base-macros)
    (core: assert-macros)
-   (= engine-type))
+   (= engine-types))
   (load
    (= globals)
    (= gl-utils)
