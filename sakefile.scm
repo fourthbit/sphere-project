@@ -155,7 +155,7 @@
 ;;!! Host (Linux/OSX) tasks
 
 (define-task host:run ()
-  (fusion#host-run-interpreted 'main)) 
+  (fusion#host-run-interpreted 'loader)) 
 
 (define-task host:compile ()
   ;; Note (merge-modules): If #t this will include all dependencies in one big file before compiling to C

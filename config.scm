@@ -6,11 +6,15 @@
   (load
    (energy: remote/debuggee)
    (fusion: spheres-remote)
-   (opengl: gl-es2)
    (sdl2: sdl2)
    (sdl2: sdl2-image)
+   (cond-expand
+    ((or android ios)
+     (opengl: gl-es2)
+     (fusion: ios))
+    (else
+     (opengl: gl)))
    (math: matrix)
-   (fusion: ios)
    (fabric: algorithm/list)))
  (app
   (include
@@ -20,14 +24,4 @@
   (load
    (= globals)
    (= gl-utils)
-   (= engine)))
- (main-minimal
-  (load
-   (energy: remote/debuggee)))
- (main
-  (include
-   (core: base-macros)
-   (core: assert-macros))
-  (load
-   (energy: remote/debuggee)
-   (math: matrix))))
+   (= engine))))

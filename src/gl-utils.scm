@@ -118,7 +118,7 @@
     (check-gl-error
      (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA ; internal format
                    (SDL_Surface-w texture-img*) (SDL_Surface-h texture-img*)
-                   0 GL_BGRA_EXT GL_UNSIGNED_BYTE
+                   0 (cond-expand (ios GL_BGRA_EXT) (else GL_BGRA)) GL_UNSIGNED_BYTE
                    (SDL_Surface-pixels texture-img*)))
     ;; FILTER: Necessary for NPOT textures in GLES2
     (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)

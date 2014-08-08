@@ -1,7 +1,7 @@
 ;;-------------------------------------------------------------------------------
 ;; Application Life Cycle
 
-;; Initializes the App
+;;! Initializes the App
 (define (init-app!)
   (let ((mode* (alloc-SDL_DisplayMode))
         (flags-sdl (bitwise-ior SDL_INIT_VIDEO SDL_INIT_AUDIO))
@@ -14,7 +14,9 @@
     (when (not (= (IMG_Init flags-img) flags-img))
           (error-log "Couldn't initialize SDL Image!"))
     (cond-expand
-     (host #!void)
+     (host
+      (SDL_GL_SetAttribute SDL_GL_CONTEXT_MAJOR_VERSION 2)
+      (SDL_GL_SetAttribute SDL_GL_CONTEXT_MINOR_VERSION 1))
      (else
       (SDL_GL_SetAttribute SDL_GL_CONTEXT_PROFILE_MASK SDL_GL_CONTEXT_PROFILE_ES)
       (SDL_GL_SetAttribute SDL_GL_CONTEXT_MAJOR_VERSION 2)
@@ -30,8 +32,11 @@
     (SDL_GetDisplayMode 0 0 mode*)
     (let ((reported-width (SDL_DisplayMode-w mode*))
           (reported-height (SDL_DisplayMode-h mode*)))
-      (set! *screen-width* (min reported-width reported-height))
-      (set! *screen-height* (max reported-width reported-height)))
+      (cond-expand
+       (ios (set! *screen-width* (min reported-width reported-height))
+            (set! *screen-height* (max reported-width reported-height)))
+       (else (set! *screen-width* 640)
+             (set! *screen-height* 960))))
     (set! *window*
           (SDL_CreateWindow "SDL/GL" SDL_WINDOWPOS_CENTERED SDL_WINDOWPOS_CENTERED
                             *screen-width* *screen-height*
@@ -42,6 +47,7 @@
     (unless *window* (error-log "Unable to create render window" (SDL_GetError)))
     ;; OpenGL/ES context
     (let ((ctx (SDL_GL_CreateContext *window*)))
+      (unless ctx (error-log "Unable to create GL context" (SDL_GetError)))
       (SDL_Log (string-append "SDL screen size: " (object->string *screen-width*) " x " (object->string *screen-height*)))
       (SDL_Log (string-append "OpenGL Version: " (*->string (glGetString GL_VERSION))))
       ;; Glew: initialize extensions
@@ -52,7 +58,7 @@
     ;; Init graphics: shaders, textures...
     (init-graphics!)))
 
-;; Cleanup resources and quit the application
+;;! Cleanup resources and quit the application
 (define (destroy-app!)
   (destroy-graphics!)
   (SDL_DestroyWindow *window*)
@@ -72,12 +78,12 @@
   ;; Generate a procedure that runs the app in a new thread
   (lambda ()
     (cond-expand
+     ;; This was necessary for iOS, but a current hack in SDL makes it unnecessary.
+     ;; The callback gets called in a loop controlled by the host system. The REPL thread gets
+     ;; resumed as well as soon as this callback is re-entered. For this callback to work, it
+     ;; is essential to leave the main() function. This is achieved by continuing the main thread,
+     ;; which is by default blocked waiting for messages.
      (ios-sdl-callback
-      ;; This was necessary for iOS, but a current hack in SDL makes it unnecessary.
-      ;; The callback gets called in a loop controlled by the host system. The REPL thread gets
-      ;; resumed as well as soon as this callback is re-entered. For this callback to work, it
-      ;; is essential to leave the main() function. This is achieved by continuing the main thread,
-      ;; which is by default blocked waiting for messages.
       (sdl-ios-animation-callback-set!
        (let ((world (create-world-wrapper create-world)))
          (lambda (params)
@@ -94,6 +100,19 @@
       (log "setting iOS callback")
       (SDL_iPhoneSetAnimationCallback *window* 1 *sdl-ios-animation-callback-proxy* #f)
       (thread-send *main-thread* 'continue))
+     ;; Host version: no threads
+     (host
+      (let loop ((world (create-world-wrapper create-world)))
+        (when *world-injected*
+              (set! world *world-injected*)
+              (set! *world-injected* #f))
+        (set! *world* world)
+        (loop
+         (draw-world-wrapper pre-render
+                             post-render
+                             (update-world-wrapper update-world
+                                                   (process-events-wrapper world))))))
+     ;; Mobile version: thread supports remote REPL
      (else
       (if *app-thread* (thread-terminate! *app-thread*))
       (set! *app-thread*
@@ -165,7 +184,7 @@
                    (= SDL_KEYUP event-type)
                    (or (= (get-key-code event) SDLK_ESCAPE)
                        (= (get-key-code event) SDLK_AC_BACK))))
-              (SDL_Quit))
+              (destroy-app!))
              ;; Touch events
              ((= SDL_FINGERMOTION event-type)
               ;;(ev-poll (cons '(fingermotion) output))
@@ -259,15 +278,17 @@
       (glUseProgram 0)))
   (resize-graphics! *screen-width* *screen-height*)
   (init-shaders!)
+  ;; OpenGL 3.3+
   ;; Init sampler
-  (cond-expand
-   (host (glGenSamplers 1 sprite-sampler*)
-         (let ((sampler-id (*->GLuint sprite-sampler*)))
-           (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
-           (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
-           (glSamplerParameteri sampler-id GL_TEXTURE_MAG_FILTER GL_NEAREST)
-           (glSamplerParameteri sampler-id GL_TEXTURE_MIN_FILTER GL_NEAREST)))
-   (else #!void)))
+  ;; (cond-expand
+  ;;  (host (glGenSamplers 1 texture-sampler*)
+  ;;        (let ((sampler-id (*->GLuint texture-sampler*)))
+  ;;          (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
+  ;;          (glSamplerParameteri sampler-id GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
+  ;;          (glSamplerParameteri sampler-id GL_TEXTURE_MAG_FILTER GL_NEAREST)
+  ;;          (glSamplerParameteri sampler-id GL_TEXTURE_MIN_FILTER GL_NEAREST)))
+  ;;  (else #!void))
+  )
 
 ;; Handle window resizing and orientation
 (define (resize-graphics! *screen-width* *screen-height*)
@@ -285,9 +306,9 @@
 
 ;; Tear down all OpenGL structures
 (define (destroy-graphics!)
-  (table-for-each (lambda (buffer) (glDeleteBuffers 1 buffer)) *gl-buffers*)
+  (table-for-each (lambda (key buffer) (glDeleteBuffers 1 (buffer-id buffer))) *gl-buffers*)
   (set! *gl-buffers* (make-table))
-  (table-for-each (lambda (buffer) (glDeleteTextures 1 buffer)) *gl-textures*)
+  (table-for-each (lambda (key tex) (glDeleteTextures 1 (texture-id tex))) *gl-textures*)
   (set! *gl-textures* (make-table)))
 
 ;;! Draw the given sprite in the current window
@@ -296,8 +317,9 @@
                (table-ref *gl-programs* 'tex2d)
                GL_TRIANGLES 6
                (lambda ()
-                 (cond-expand (host (glBindSampler 0 (*->GLuint sprite-sampler*)))
-                              (else #!void))
+                 ;; OpenGL 3.3+
+                 ;; (cond-expand (host (glBindSampler 0 (*->GLuint texture-sampler*)))
+                 ;;              (else #!void))
                  (check-gl-error
                   (glUniform1i (table-ref *gl-uniforms* 'texture) 0))
                  (check-gl-error
