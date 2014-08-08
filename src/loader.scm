@@ -54,4 +54,5 @@
 
 
 ;; Wait until the thread receives a message to leave
+(define *main-thread* (current-thread))
 (thread-receive)

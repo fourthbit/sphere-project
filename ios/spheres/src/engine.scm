@@ -72,7 +72,12 @@
   ;; Generate a procedure that runs the app in a new thread
   (lambda ()
     (cond-expand
-     (ios
+     (ios-sdl-callback
+      ;; This was necessary for iOS, but a current hack in SDL makes it unnecessary.
+      ;; The callback gets called in a loop controlled by the host system. The REPL thread gets
+      ;; resumed as well as soon as this callback is re-entered. For this callback to work, it
+      ;; is essential to leave the main() function. This is achieved by continuing the main thread,
+      ;; which is by default blocked waiting for messages.
       (sdl-ios-animation-callback-set!
        (let ((world (create-world-wrapper create-world)))
          (lambda (params)
@@ -88,7 +93,7 @@
                                       (process-events-wrapper world)))))))
       (log "setting iOS callback")
       (SDL_iPhoneSetAnimationCallback *window* 1 *sdl-ios-animation-callback-proxy* #f)
-      (thread-send #1 1))
+      (thread-send *main-thread* 'continue))
      (else
       (if *app-thread* (thread-terminate! *app-thread*))
       (set! *app-thread*

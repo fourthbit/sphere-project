@@ -14,10 +14,11 @@ ___setup_params_struct setup_params;
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 
 
-void ___run_gambit()
+void run_gambit()
 {
   printf("%s", "Setting up Gambit...\n");
   // Taken from gambit, lib/main.c.
@@ -48,18 +49,17 @@ void ___run_gambit()
   setup_params.linker = SCHEME_LIBRARY_LINKER;
   setup_params.debug_settings = debug_settings;
 
-  SDL_Log("%s", "Setting up Gambit...\n");
+  printf("%s", "Setting up Gambit...\n");
 
   ___setup(&setup_params);
 
-  SDL_Log("%s", "Gambit setup finished...\n");
-  //printf("%s", "Cleaning up Gambit...\n");
-  //___cleanup();
+  printf("%s", "Gambit setup finished...\n");
 }
 
 int SDL_main(int argc, char *argv[])
 {
-    ___run_gambit();
+    atexit(___cleanup);
+    run_gambit();
 
     return 0;
 }
