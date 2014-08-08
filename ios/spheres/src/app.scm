@@ -36,5 +36,3 @@
    post-render: (lambda (world) (SDL_Delay 100))))
 
 (app)
-
-

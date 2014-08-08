@@ -26,9 +26,12 @@
 
 ;; Update the app Scheme source code
 (define (go)
+  (define project-sources "spheres/src/")
   (define (update-source source)
-    (if (zero? (shell-command (string-append "wget localhost:8000/" source " -O spheres/src/" source)))
-        (load (string-append "spheres/src/" source))
+    (if (zero? (parameterize
+                ((current-directory project-sources))
+                (shell-command (string-append "wget -nv -N localhost:8000/" source))))
+        (load (string-append project-sources source))
         (let ((message (string-append source " could not be retrieved")))
           (SDL_Log message)
           (println message))))
@@ -41,10 +44,14 @@
   (update-source "app.scm")
   'success)
 
-;; Run the application
-(go)
 
-;; ;; Put the main thread to sleep, unless we want exit the main (like in iOS)
-(cond-expand
- (ios #!void)
- (else (thread-sleep! +inf.0)))
+;; Spawn a REPL
+(if (remote-repl-setup! "localhost" port: 20000)
+    (begin
+      (remote-repl-run!)
+      (SDL_Log "***** Successfully connected to Gambit Debug Server *****"))
+    (SDL_Log "***** Unable to connect to Gambit Debug Server. Are you running 'sense'? *****"))
+
+
+;; Wait until the thread receives a message to leave
+(thread-receive)

@@ -75,13 +75,6 @@
      (ios
       (sdl-ios-animation-callback-set!
        (let ((world (create-world-wrapper create-world)))
-         (unless *repl-thread*
-                 (if (remote-repl-setup! "localhost" port: 20000)
-                     (begin
-                       (remote-repl-run!)
-                       (SDL_Log "***** Successfully connected to Gambit Debug Server *****"))
-                     (SDL_Log "***** Unable to connect to Gambit Debug Server. Are you running 'sense'? *****"))
-                 (set! *repl-thread* #t))
          (lambda (params)
            (when *world-injected* ;; Injected world
                  (set! world *world-injected*)
@@ -94,15 +87,9 @@
                                       update-world
                                       (process-events-wrapper world)))))))
       (log "setting iOS callback")
-      (SDL_iPhoneSetAnimationCallback *window* 1 *sdl-ios-animation-callback-proxy* #f))
+      (SDL_iPhoneSetAnimationCallback *window* 1 *sdl-ios-animation-callback-proxy* #f)
+      (thread-send #1 1))
      (else
-      (unless *repl-thread*
-              (if (remote-repl-setup! "localhost" port: 20000)
-                  (begin
-                    (remote-repl-run!)
-                    (SDL_Log "***** Successfully connected to Gambit Debug Server *****"))
-                  (SDL_Log "***** Unable to connect to Gambit Debug Server. Are you running 'sense'? *****"))
-              (set! *repl-thread* #t))
       (if *app-thread* (thread-terminate! *app-thread*))
       (set! *app-thread*
             (make-thread
