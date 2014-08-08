@@ -72,12 +72,15 @@
   ;; Generate a procedure that runs the app in a new thread
   (lambda ()
     (cond-expand
-     (ios-todo
-      (error-log "creating iOS callback")
+     (ios-sdl-callback
+      ;; This was necessary for iOS, but a current hack in SDL makes it unnecessary.
+      ;; The callback gets called in a loop controlled by the host system. The REPL thread gets
+      ;; resumed as well as soon as this callback is re-entered. For this callback to work, it
+      ;; is essential to leave the main() function. This is achieved by continuing the main thread,
+      ;; which is by default blocked waiting for messages.
       (sdl-ios-animation-callback-set!
        (let ((world (create-world-wrapper create-world)))
          (lambda (params)
-           (error-log "iOS loop")
            (when *world-injected* ;; Injected world
                  (set! world *world-injected*)
                  (set! *world-injected* #f))
@@ -88,8 +91,9 @@
                                      (update-world-wrapper
                                       update-world
                                       (process-events-wrapper world)))))))
-      (error-log "setting iOS callback")
-      (SDL_iPhoneSetAnimationCallback *window* 1 *sdl-ios-animation-callback-proxy* #f))
+      (log "setting iOS callback")
+      (SDL_iPhoneSetAnimationCallback *window* 1 *sdl-ios-animation-callback-proxy* #f)
+      (thread-send *main-thread* 'continue))
      (else
       (if *app-thread* (thread-terminate! *app-thread*))
       (set! *app-thread*

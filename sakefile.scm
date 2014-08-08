@@ -80,7 +80,8 @@
                                             "-fcolor-diagnostics")                                            
                               verbose: #t)
       (let ((arch 'i386)) ;; armv7 / armv7s
-        ;;(fusion#ios-copy-source-dependencies 'app)
+        (fusion#ios-copy-source-dependencies 'app)
+        (exit)
         
         ;; Compile the main module and its dependencies as a loadable object, for all iOS
         ;; archs. The (load) function takes care of loading code dinamically, both compiled
