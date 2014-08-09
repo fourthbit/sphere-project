@@ -165,7 +165,9 @@
   (if #t ;; #t to compile the application as a single standalone
       ;; Bundle as a single executable
       (fusion#host-compile-exe "my-application-standalone" 'app
-                               cond-expand-features: '(osx debug static)
+                               cond-expand-features: (case (sake#host-platform)
+                                                       ((osx) '(osx debug static))
+                                                       (else '(debug static)))
                                merge-modules: #f
                                verbose: #t)
       (begin
