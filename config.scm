@@ -42,9 +42,20 @@
      (= globals)
      (= gl-utils)
      (= engine))
-    ;; Host static
-    (else
+    ;; Host static compilation
+    ((and host static)
+     (energy: remote/debuggee)
+     (sdl2: sdl2)
+     (sdl2: sdl2-image)
      (opengl: gl)
+     (math: matrix)
+     (fabric: algorithm/list)
+     (= globals)
+     (= gl-utils)
+     (= engine-types)
+     (= engine))
+    ;; Host development
+    (else
      (= globals)
      (= gl-utils)
      (= engine)))))

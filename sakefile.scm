@@ -162,20 +162,23 @@
 (define-task host:compile ()
   ;; Note (merge-modules): If #t this will include all dependencies in one big file before compiling to C
   ;; Note (compile-loadable-set): this must be linked flat
-  (if #f ;; #t to compile the application as a single standalone
+  (if #t ;; #t to compile the application as a single standalone
       ;; Bundle as a single executable
-      (fusion#host-compile-exe "my-application-standalone" 'main
-                               merge-modules: #f)
-      (begin 
+      (fusion#host-compile-exe "my-application-standalone" 'app
+                               cond-expand-features: '(osx debug static)
+                               merge-modules: #f
+                               verbose: #t)
+      (begin
+        (error "loadable modules in the host system is not supported yet (WIP)")
         ;; Compile as a loader and a loadable library
         (fusion#host-compile-exe "my-application" 'loader
-                                 cond-expand-features: '(host debug)
+                                 cond-expand-features: '(osx debug static)
                                  compiler-options: '(debug))
         ;; Compile the main module and its dependencies as a loadable object. The (load)
         ;; function takes care of loading code dinamically, both compiled and source code.
-        (fusion#host-compile-loadable-set "main.o1" 'main
+        (fusion#host-compile-loadable-set "app.o1" 'app
                                           merge-modules: #f
-                                          cond-expand-features: '(debug)
+                                          cond-expand-features: '(osx debug)
                                           compiler-options: '(debug)
                                           verbose: #t))))
 

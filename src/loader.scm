@@ -15,7 +15,7 @@
                            '((= gl-utils)
                              (= engine)
                              (= app)))))
- (else
+ (host
   (define (go)
     (##spheres-load app))))
 
@@ -23,8 +23,7 @@
 
 ;; Spawn a REPL or just run interpreted
 (cond-expand
- (host (##spheres-load app))
- (else
+ (ios
   ;; Spawn a REPL
   (if (remote-repl-setup! "localhost" port: 20000)
       (begin
@@ -33,6 +32,8 @@
       (SDL_Log "***** Unable to connect to Gambit Debug Server. Are you running 'sense'? *****"))
   ;; Wait until the thread receives a message to leave
   (define *main-thread* (current-thread))
-  (thread-receive)))
+  (thread-receive))
+ (host
+  (##spheres-load app)))
 
 

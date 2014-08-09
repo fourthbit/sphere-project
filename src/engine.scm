@@ -464,7 +464,7 @@
                     (else
                      (recur (cdr events) world)))))))
     ;; Handle resize event
-    (aif resize (assq 'window-resized events)
+    (aif resize-event (assq 'window-resized events)
          (let ((width (cadr (memq width: resize-event)))
                (height (cadr (memq height: resize-event))))
            (resize-graphics! width height)))
