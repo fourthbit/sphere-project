@@ -22,6 +22,41 @@
    (core: assert-macros)
    (= engine-types))
   (load
-   (= globals)
-   (= gl-utils)
-   (= engine))))
+   (cond-expand
+    ;; iOS static compilation
+    ((and ios static)
+     (energy: remote/debuggee)
+     (fusion: spheres-remote)
+     (sdl2: sdl2)
+     (sdl2: sdl2-image)
+     (opengl: gl-es2)
+     (fusion: ios)
+     (math: matrix)
+     (fabric: algorithm/list)
+     (= globals)
+     (= gl-utils)
+     (= engine-types)
+     (= engine))
+    ;; iOS development
+    (ios
+     (= globals)
+     (= gl-utils)
+     (= engine))
+    ;; Host static
+    (else
+     (opengl: gl)
+     (= globals)
+     (= gl-utils)
+     (= engine)))))
+ (globals
+  (include
+   (core: base-macros)))
+ (gl-utils
+  (include
+   (core: base-macros)))
+ (engine-types
+  (include
+   (core: base-macros)))
+ (engine
+  (include
+   (core: base-macros))))

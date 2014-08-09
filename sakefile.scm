@@ -68,16 +68,18 @@
 (define-task ios:compile ()
   (if #f ;; #t to compile as a single app executable
       ;; Compile all modules within the app executable
-      (fusion#ios-compile-app 'main
+      (fusion#ios-compile-app 'app
                               arch: 'i386 ;; armv7 / armv7s
                               target: 'debug
-                              cond-expand-features: '(debug)
+                              cond-expand-features: '(debug static)
                               compiler-options: '(debug)
-                              ;; XXX ADD THIS OPTIMIZATIONS
-                              cc-options: '("-D___SINGLE_HOST"
-                                            "-O1"
-                                            "-fdiagnostics-show-note-include-stack"
-                                            "-fcolor-diagnostics")                                            
+                              cc-options: (list "-w"
+                                                ;;"-D___SINGLE_HOST"
+                                                "-O1"
+                                                "-fdiagnostics-show-note-include-stack"
+                                                "-fcolor-diagnostics"
+                                                (string-append "-I" (ios-directory) "SDL/include")
+                                                (string-append "-I" (ios-directory) "SDL_image/include"))
                               verbose: #t)
       (let ((arch 'i386)) ;; armv7 / armv7s
         ;; Copy all the foreign dependencies of the module, so they can be automatically
@@ -91,7 +93,7 @@
         ;; - Dynamically running within the Remote Debugger in Emacs or the terminal
         ;; Finally, take into account that loadable libraries do work only on the simulator
         #;
-        (fusion#ios-compile-loadable-set "main-minimal.o1" 'main-minimal
+        (fusion#ios-compile-loadable-set "globals.o1" 'globals
                                          merge-modules: #f
                                          target: 'debug
                                          arch: arch
@@ -106,7 +108,7 @@
         (fusion#ios-compile-app 'loader
                                 arch: arch
                                 target: 'debug
-                                cond-expand-features: '(ios debug)
+                                cond-expand-features: '(debug)
                                 compiler-options: '(debug)
                                 cc-options: (list "-w"
                                                   (string-append "-I" (ios-directory) "SDL/include")
@@ -188,7 +190,7 @@
 
 (define help #<<end-of-help
   
-    Tasks (run with 'sake <task>')
+    Tasks (run with 'ssake <task>')
     ------------------------------
   
     android:setup             Setup Android project before running other tasks

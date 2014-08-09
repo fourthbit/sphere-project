@@ -1,3 +1,13 @@
+;; Executes the given form and checks if GL's state is valid
+(define-macro (check-gl-error exp)
+  `(let* ((result ,exp)
+          (error (glGetError)))
+     (unless (= error GL_NO_ERROR)
+             (error-log (string-append "GL Error -- " (object->string error)
+                                       " - " (object->string ',exp))))
+     result))
+
+
 ;;-------------------------------------------------------------------------------
 ;; Application Life Cycle
 
@@ -100,8 +110,8 @@
       (log "setting iOS callback")
       (SDL_iPhoneSetAnimationCallback *window* 1 *sdl-ios-animation-callback-proxy* #f)
       (thread-send *main-thread* 'continue))
-     ;; Host version: no threads
-     (host
+     ;; Static compilation / Host version: no threads
+     ((or host static)
       (let loop ((world (create-world-wrapper create-world)))
         (when *world-injected*
               (set! world *world-injected*)

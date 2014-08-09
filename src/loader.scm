@@ -1,5 +1,7 @@
 (cond-expand
  (ios
+  ;; SchemeSpheres initialization
+  (##spheres-init)
   ;; Preload modules
   (##spheres-include-eval '((core: base-macros)
                             (core: assert-macros)))
@@ -12,12 +14,12 @@
     (##spheres-load-remote "localhost:8000"
                            '((= gl-utils)
                              (= engine)
-                             (= app))))
-  ;; Remote REPL Initialization
-  (##spheres-init))
+                             (= app)))))
  (else
   (define (go)
     (##spheres-load app))))
+
+(SDL_Log (object->string (##cond-expand-features)))
 
 ;; Spawn a REPL or just run interpreted
 (cond-expand

@@ -1,3 +1,13 @@
+;; Executes the given form and checks if GL's state is valid
+(define-macro (check-gl-error exp)
+  `(let* ((result ,exp)
+          (error (glGetError)))
+     (unless (= error GL_NO_ERROR)
+             (error-log (string-append "GL Error -- " (object->string error)
+                                       " - " (object->string ',exp))))
+     result))
+
+
 ;;-------------------------------------------------------------------------------
 ;;!! GL structures
 
